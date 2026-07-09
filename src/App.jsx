@@ -245,44 +245,66 @@ function ListView({tasks, onSelect}) {
 function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, statuses}) {
   if(!task) return null;
   
-  let selectedTask = null;
-  let filteredTasks = [];
-  let title = "";
-  let color = T.indigo;
-  let showDetail = false;
-
-  if(task.type === "task") {
-    selectedTask = task.task;
-    showDetail = true;
-  } else {
-    if(task.filter === "all") {
-      filteredTasks = [...tasks];
-      title = "All Tasks";
-      color = T.sky;
-    } else if(task.filter === "inprogress") {
-      filteredTasks = tasks.filter(t => t.status === "In Progress");
-      title = "In Progress Tasks";
-      color = T.indigo;
-    } else if(task.filter === "done") {
-      filteredTasks = tasks.filter(t => t.status === "Done");
-      title = "Completed Tasks";
-      color = T.emerald;
-    } else if(task.filter === "critical") {
-      filteredTasks = tasks.filter(t => t.priority === "Critical" && t.status !== "Done");
-      title = "Critical Tasks (Unblocked)";
-      color = T.rose;
-    } else if(task.type === "app") {
-      const app = appOf(task.app, applications);
-      filteredTasks = tasks.filter(t => t.app === task.app);
-      title = app.name;
-      color = app.color;
+  const [formData, setFormData] = useState(null);
+  const [filteredTasks, setFilteredTasks] = useState([]);
+  const [title, setTitle] = useState("");
+  const [color, setColor] = useState(T.indigo);
+  const [showDetail, setShowDetail] = useState(false);
+  
+  // Initialize form data when task changes
+  useEffect(() => {
+    if(task.type === "task") {
+      setFormData({...task.task});
+      setShowDetail(true);
+      setFilteredTasks([]);
+    } else {
+      setFormData(null);
+      setShowDetail(false);
+      
+      if(task.filter === "all") {
+        setFilteredTasks([...tasks]);
+        setTitle("All Tasks");
+        setColor(T.sky);
+      } else if(task.filter === "inprogress") {
+        setFilteredTasks(tasks.filter(t => t.status === "In Progress"));
+        setTitle("In Progress Tasks");
+        setColor(T.indigo);
+      } else if(task.filter === "done") {
+        setFilteredTasks(tasks.filter(t => t.status === "Done"));
+        setTitle("Completed Tasks");
+        setColor(T.emerald);
+      } else if(task.filter === "critical") {
+        setFilteredTasks(tasks.filter(t => t.priority === "Critical" && t.status !== "Done"));
+        setTitle("Critical Tasks (Unblocked)");
+        setColor(T.rose);
+      } else if(task.type === "app") {
+        const app = appOf(task.app, applications);
+        setFilteredTasks(tasks.filter(t => t.app === task.app));
+        setTitle(app.name);
+        setColor(app.color);
+      }
     }
-  }
+  }, [task, tasks, applications]);
 
-  const sortedTasks = [...filteredTasks].sort((a,b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
-  const app = selectedTask ? appOf(selectedTask.app, applications) : null;
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
-  // Task Detail View
+  const handleSaveChanges = () => {
+    if(formData && formData.id) {
+      onUpdate(formData.id, formData);
+      onClose();
+    }
+  };
+
+  // If showing detail view for a single task
+  if(showDetail && formData) {
+    const selectedTask = formData;
+    const sortedTasks = [...filteredTasks].sort((a,b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
+    const app = selectedTask ? appOf(selectedTask.app, applications) : null;
   if(showDetail && selectedTask) {
     return (
       <div style={{position:"fixed", right:0, top:0, height:"100vh", width:"min(45%,600px)", background:T.panel, borderLeft:`3px solid ${app.color}`, display:"flex", flexDirection:"column", zIndex:1000, boxShadow:"-4px 0 40px rgba(0,0,0,0.4)", animation:"slideIn 0.3s ease"}}>
@@ -309,28 +331,28 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
 
           <div>
             <label style={{fontSize:11, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:8, display:"block"}}>Status</label>
-            <select value={selectedTask.status} onChange={e=>onUpdate(selectedTask.id, "status", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
+            <select value={selectedTask.status} onChange={e=>handleChange("status", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
               {(statuses && statuses.length > 0 ? statuses : ["To Do", "In Progress", "Done"]).map(s=><option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
           <div>
             <label style={{fontSize:11, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:8, display:"block"}}>Priority</label>
-            <select value={selectedTask.priority} onChange={e=>onUpdate(selectedTask.id, "priority", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
+            <select value={selectedTask.priority} onChange={e=>handleChange("priority", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
               {PRIORITIES.map(p=><option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
           <div>
             <label style={{fontSize:11, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:8, display:"block"}}>Type</label>
-            <select value={selectedTask.type} onChange={e=>onUpdate(selectedTask.id, "type", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
+            <select value={selectedTask.type} onChange={e=>handleChange("type", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
               {Object.keys(TYPE_ICON).map(t=><option key={t} value={t}>{t}</option>)}
             </select>
           </div>
 
           <div>
             <label style={{fontSize:11, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:8, display:"block"}}>Assignee</label>
-            <select value={selectedTask.assignee} onChange={e=>onUpdate(selectedTask.id, "assignee", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
+            <select value={selectedTask.assignee} onChange={e=>handleChange("assignee", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
               {(assignees && assignees.length > 0 ? assignees : ["Unassigned"]).map(a=><option key={a} value={a}>{a}</option>)}
             </select>
           </div>
@@ -349,7 +371,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
             </div>
           </div>
 
-          <button onClick={onClose} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s", marginTop:10}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>Save Changes</button>
+          <button onClick={handleSaveChanges} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s", marginTop:10}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>Save Changes</button>
         </div>
       </div>
     );
@@ -943,11 +965,16 @@ export default function ITSM() {
     loadData();
   }, []);
 
-  function updateTask(id, key, value) {
-    setTasks(ts=>ts.map(t=>t.id===id?{...t,[key]:value}:t));
-    setSelected(s=>s?.id===id?{...s,[key]:value}:s);
+  function updateTask(id, keyOrData, value) {
+    // Handle both single field updates: updateTask(id, "status", "Done")
+    // And full object updates: updateTask(id, {status: "Done", priority: "High"})
+    const updates = typeof keyOrData === 'string' ? { [keyOrData]: value } : keyOrData;
+    
+    setTasks(ts=>ts.map(t=>t.id===id?{...t,...updates}:t));
+    setSelected(s=>s?.id===id?{...s,...updates}:s);
+    
     // Save to backend
-    apiService.updateTask(id, { [key]: value });
+    apiService.updateTask(id, updates);
   }
 
   function addTask(t) {
