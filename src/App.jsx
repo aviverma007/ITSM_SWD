@@ -967,19 +967,27 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                                 const result = await apiService.restoreTicket(t.id);
                                 console.log("Restore result:", result);
                                 
-                                // Remove from deleted list
+                                // Remove from local deleted list immediately
                                 setDeletedTickets(deletedTickets.filter(dt => dt.id !== t.id));
+                                console.log("Removed from local deletedTickets");
                                 
-                                // Also reload parent tasks list to show ticket in active
+                                // Small delay to ensure DB transaction completes
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                                
+                                // Reload deleted tickets from backend
+                                const deletedData = await apiService.getDeletedTickets();
+                                if (deletedData) {
+                                  setDeletedTickets(deletedData);
+                                  console.log("Reloaded deletedTickets from backend:", deletedData.length);
+                                }
+                                
+                                // Also call parent to reload active tasks
                                 onRestoreTask(t.id);
                                 
-                                // Reload all admin panel data
-                                await loadData();
-                                
-                                alert("Ticket restored successfully!");
+                                alert("✅ Ticket restored successfully!");
                               } catch (err) {
                                 console.error("Error restoring ticket:", err);
-                                alert("Failed to restore ticket: " + err.message);
+                                alert("❌ Failed to restore: " + err.message);
                               }
                             }
                           }}
