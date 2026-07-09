@@ -132,6 +132,7 @@ app.get('/api/tasks', async (req, res) => {
     }));
     res.json(tasks);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -150,6 +151,7 @@ app.get('/api/tasks/:id', async (req, res) => {
     row.labels = row.labels ? JSON.parse(row.labels) : [];
     res.json(row);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -179,6 +181,7 @@ app.post('/api/tasks', async (req, res) => {
 
     res.json({ id, success: true, message: 'Task created' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -231,6 +234,7 @@ app.put('/api/tasks/:id', async (req, res) => {
 
     res.json({ success: true, message: 'Task updated' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -246,6 +250,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
       .query('DELETE FROM activity_log WHERE task_id = @task_id');
     res.json({ success: true, message: 'Task deleted' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -258,6 +263,7 @@ app.get('/api/assignees', async (req, res) => {
     const result = await pool.request().query('SELECT * FROM assignees ORDER BY name');
     res.json(result.recordset);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -275,6 +281,7 @@ app.post('/api/assignees', async (req, res) => {
       .query('INSERT INTO assignees (name, email, role, created) VALUES (@name, @email, @role, @created)');
     res.json({ success: true, message: 'Assignee added' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -287,6 +294,7 @@ app.delete('/api/assignees/:id', async (req, res) => {
       .query('DELETE FROM assignees WHERE id = @id');
     res.json({ success: true, message: 'Assignee deleted' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -299,6 +307,7 @@ app.get('/api/status-options', async (req, res) => {
     const result = await pool.request().query('SELECT * FROM status_options ORDER BY name');
     res.json(result.recordset);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -315,6 +324,7 @@ app.post('/api/status-options', async (req, res) => {
       .query('INSERT INTO status_options (name, color, created) VALUES (@name, @color, @created)');
     res.json({ success: true, message: 'Status option added' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -327,6 +337,7 @@ app.delete('/api/status-options/:id', async (req, res) => {
       .query('DELETE FROM status_options WHERE id = @id');
     res.json({ success: true, message: 'Status option deleted' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -339,6 +350,7 @@ app.get('/api/applications', async (req, res) => {
     const result = await pool.request().query('SELECT * FROM applications ORDER BY name');
     res.json(result.recordset);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -353,6 +365,7 @@ app.get('/api/activity-log/:taskId', async (req, res) => {
       .query('SELECT TOP 50 * FROM activity_log WHERE task_id = @task_id ORDER BY timestamp DESC');
     res.json(result.recordset);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -365,6 +378,7 @@ app.get('/api/users', async (req, res) => {
     const result = await pool.request().query('SELECT * FROM users ORDER BY name');
     res.json(result.recordset);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -382,6 +396,7 @@ app.post('/api/users', async (req, res) => {
       .query('INSERT INTO users (name, email, role, created) VALUES (@name, @email, @role, @created)');
     res.json({ success: true, message: 'User added' });
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -401,6 +416,7 @@ app.get('/api/stats', async (req, res) => {
     `);
     res.json(result.recordset[0]);
   } catch (err) {
+    console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
