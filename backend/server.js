@@ -195,7 +195,7 @@ async function ensureTables() {
 // Get all tickets
 app.get('/api/tickets', async (req, res) => {
   try {
-    const result = await pool.request().query('SELECT * FROM tickets_enhanced WHERE is_deleted = 0 ORDER BY created DESC');
+    const result = await pool.request().query('SELECT * FROM tickets_enhanced ORDER BY created DESC');
     const tickets = result.recordset.map(row => ({
       ...row,
       labels: row.labels ? JSON.parse(row.labels) : [],
@@ -233,19 +233,25 @@ app.get('/api/tickets/deleted/all', async (req, res) => {
 // Restore deleted ticket
 app.put('/api/tickets/:id/restore', async (req, res) => {
   try {
+    console.log(`[RESTORE] Starting restore for ticket: ${req.params.id}`);
+    
     // Get the ticket from deleted_tickets
     const getResult = await pool.request()
       .input('id', sql.NVarChar, req.params.id)
       .query('SELECT * FROM deleted_tickets WHERE id = @id');
     
+    console.log(`[RESTORE] Found in deleted_tickets:`, getResult.recordset.length);
+    
     if (getResult.recordset.length === 0) {
+      console.log(`[RESTORE] ERROR: Deleted ticket not found`);
       return res.status(404).json({ error: 'Deleted ticket not found' });
     }
     
     const ticket = getResult.recordset[0];
+    console.log(`[RESTORE] Ticket data:`, ticket.title);
     
     // Insert back into tickets_enhanced
-    await pool.request()
+    const insertResult = await pool.request()
       .input('id', sql.NVarChar, ticket.id)
       .input('ticket_number', sql.Int, ticket.ticket_number)
       .input('app', sql.NVarChar, ticket.app)
@@ -276,14 +282,18 @@ app.put('/api/tickets/:id/restore', async (req, res) => {
       .query(`INSERT INTO tickets_enhanced (id, ticket_number, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by) 
               VALUES (@id, @ticket_number, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by)`);
     
+    console.log(`[RESTORE] Inserted into tickets_enhanced`);
+    
     // Delete from deleted_tickets
     await pool.request()
       .input('id', sql.NVarChar, req.params.id)
       .query('DELETE FROM deleted_tickets WHERE id = @id');
     
+    console.log(`[RESTORE] Deleted from deleted_tickets. Restore complete!`);
+    
     res.json({ success: true, message: 'Ticket restored' });
   } catch (err) {
-    console.error("ERROR:", err.message);
+    console.error("[RESTORE] ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

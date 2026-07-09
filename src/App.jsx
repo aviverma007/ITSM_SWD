@@ -970,8 +970,11 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                                 // Remove from deleted list
                                 setDeletedTickets(deletedTickets.filter(dt => dt.id !== t.id));
                                 
-                                // Add back to active via parent
+                                // Also reload parent tasks list to show ticket in active
                                 onRestoreTask(t.id);
+                                
+                                // Reload all admin panel data
+                                await loadData();
                                 
                                 alert("Ticket restored successfully!");
                               } catch (err) {
