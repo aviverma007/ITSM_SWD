@@ -925,6 +925,7 @@ export default function ITSM() {
   const [view, setView] = useState(() => localStorage.getItem("lastView") || "dashboard");
   const [tasks, setTasks] = useState([]);
   const [assignees, setAssignees] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showNew, setShowNew] = useState(false);
   const [appFilter, setAppFilter] = useState(() => localStorage.getItem("lastAppFilter") || "all");
