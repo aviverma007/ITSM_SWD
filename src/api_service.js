@@ -153,6 +153,47 @@ export const apiService = {
     }
   },
 
+  // ========== APPLICATIONS ==========
+
+  async getAllApplications() {
+    try {
+      const res = await fetch(`${API_URL}/applications`);
+      if (!res.ok) throw new Error('Failed to fetch applications');
+      return await res.json();
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+      return [];
+    }
+  },
+
+  async addApplication(app) {
+    try {
+      const res = await fetch(`${API_URL}/applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(app)
+      });
+      if (!res.ok) throw new Error('Failed to add application');
+      return await res.json();
+    } catch (err) {
+      console.error('Error adding application:', err);
+      return null;
+    }
+  },
+
+  async deleteApplication(id) {
+    try {
+      const res = await fetch(`${API_URL}/applications/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error('Failed to delete application');
+      return await res.json();
+    } catch (err) {
+      console.error('Error deleting application:', err);
+      return null;
+    }
+  },
+
   // ========== ACTIVITY LOG ==========
 
   async getActivityLog(taskId) {
