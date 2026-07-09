@@ -934,12 +934,21 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                       <button 
                         onClick={async () => {
                           if(window.confirm("Delete this ticket? Users won't see it anymore.")) {
-                            await apiService.deleteTask(t.id);
-                            // Reload deleted tickets to show updated list
-                            const deleted = await apiService.getDeletedTickets();
-                            setDeletedTickets(deleted);
-                            // Also reload active tasks via parent callback
-                            onDeleteTask(t.id);
+                            try {
+                              console.log("Deleting ticket:", t.id);
+                              const result = await apiService.deleteTask(t.id);
+                              console.log("Delete result:", result);
+                              // Reload deleted tickets to show updated list
+                              const deleted = await apiService.getDeletedTickets();
+                              console.log("Deleted tickets:", deleted);
+                              setDeletedTickets(deleted);
+                              // Also reload active tasks via parent callback
+                              onDeleteTask(t.id);
+                              alert("Ticket deleted successfully!");
+                            } catch (err) {
+                              console.error("Error deleting ticket:", err);
+                              alert("Failed to delete ticket: " + err.message);
+                            }
                           }
                         }}
                         style={{background:T.rose, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
@@ -952,12 +961,21 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                         <button 
                           onClick={async () => {
                             if(window.confirm("Restore this ticket?")) {
-                              await apiService.restoreTicket(t.id);
-                              // Reload deleted tickets
-                              const deleted = await apiService.getDeletedTickets();
-                              setDeletedTickets(deleted);
-                              // Also reload active tasks via parent callback
-                              onRestoreTask(t.id);
+                              try {
+                                console.log("Restoring ticket:", t.id);
+                                const result = await apiService.restoreTicket(t.id);
+                                console.log("Restore result:", result);
+                                // Reload deleted tickets
+                                const deleted = await apiService.getDeletedTickets();
+                                console.log("Deleted tickets after restore:", deleted);
+                                setDeletedTickets(deleted);
+                                // Also reload active tasks via parent callback
+                                onRestoreTask(t.id);
+                                alert("Ticket restored successfully!");
+                              } catch (err) {
+                                console.error("Error restoring ticket:", err);
+                                alert("Failed to restore ticket: " + err.message);
+                              }
                             }
                           }}
                           style={{background:T.emerald, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
