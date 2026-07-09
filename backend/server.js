@@ -320,6 +320,26 @@ app.delete('/api/tickets/:id', async (req, res) => {
   }
 });
 
+// Permanently delete ticket (hard delete - cannot be restored)
+app.delete('/api/tickets/:id/permanent', async (req, res) => {
+  try {
+    // First delete from activity log
+    await pool.request()
+      .input('ticket_id', sql.NVarChar, req.params.id)
+      .query('DELETE FROM activity_log WHERE task_id = @ticket_id');
+    
+    // Then permanently delete from tickets_enhanced
+    await pool.request()
+      .input('id', sql.NVarChar, req.params.id)
+      .query('DELETE FROM tickets_enhanced WHERE id = @id');
+    
+    res.json({ success: true, message: 'Ticket permanently deleted' });
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get ticket stats
 app.get('/api/tickets/stats/summary', async (req, res) => {
   try {

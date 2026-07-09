@@ -96,6 +96,20 @@ export const apiService = {
     }
   },
 
+  async permanentlyDeleteTicket(id) {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${id}/permanent`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Failed to permanently delete ticket');
+      return await res.json();
+    } catch (err) {
+      console.error('Error permanently deleting ticket:', err);
+      return null;
+    }
+  },
+
   // ========== ASSIGNEES ==========
 
   async getAllAssignees() {

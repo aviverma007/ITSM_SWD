@@ -935,9 +935,11 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                         onClick={async () => {
                           if(window.confirm("Delete this ticket? Users won't see it anymore.")) {
                             await apiService.deleteTask(t.id);
-                            // Remove from display
+                            // Reload deleted tickets to show updated list
                             const deleted = await apiService.getDeletedTickets();
                             setDeletedTickets(deleted);
+                            // Also reload active tasks via parent callback
+                            onDeleteTask(t.id);
                           }
                         }}
                         style={{background:T.rose, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
@@ -946,17 +948,37 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                         Delete
                       </button>
                     ) : (
-                      <button 
-                        onClick={async () => {
-                          await apiService.restoreTicket(t.id);
-                          // Reload deleted tickets
-                          const deleted = await apiService.getDeletedTickets();
-                          setDeletedTickets(deleted);
-                        }}
-                        style={{background:T.emerald, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
-                      >
-                        Restore
-                      </button>
+                      <div style={{display:"flex", gap:8}}>
+                        <button 
+                          onClick={async () => {
+                            if(window.confirm("Restore this ticket?")) {
+                              await apiService.restoreTicket(t.id);
+                              // Reload deleted tickets
+                              const deleted = await apiService.getDeletedTickets();
+                              setDeletedTickets(deleted);
+                              // Also reload active tasks via parent callback
+                              onRestoreTask(t.id);
+                            }
+                          }}
+                          style={{background:T.emerald, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
+                        >
+                          ↩️ Restore
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if(window.confirm("Permanently delete this ticket? This cannot be undone.")) {
+                              await apiService.permanentlyDeleteTicket(t.id);
+                              // Reload deleted tickets
+                              const deleted = await apiService.getDeletedTickets();
+                              setDeletedTickets(deleted);
+                            }
+                          }}
+                          style={{background:"#8b3a3a", color:"#fff", border:"none", borderRadius:6, padding:"8px 10px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
+                          title="Permanently delete (cannot restore)"
+                        >
+                          🗑️ Perm Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))
@@ -1159,7 +1181,7 @@ export default function ITSM() {
 
       {/* Main */}
       <div style={{flex:1, overflowY:"auto", overflowX:"hidden", padding:"12px 20px", width:"100%", boxSizing:"border-box"}}>
-        {currentUser==="admin" && <AdminPanel tasks={tasks} onDeleteTask={(id)=>{}} onRestoreTask={(id)=>{}}/>}
+        {currentUser==="admin" && <AdminPanel tasks={tasks} onDeleteTask={async (id)=>{const updated = await apiService.getAllTasks(); setTasks(updated);}} onRestoreTask={async (id)=>{const updated = await apiService.getAllTasks(); setTasks(updated);}}/>}
         {currentUser==="user" && (
           <>
             {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected} statuses={statuses}/>}
