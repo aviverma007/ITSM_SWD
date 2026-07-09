@@ -1,6 +1,6 @@
 // API_SERVICE.js - Place this in your src folder
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://192.168.66.34:5001/api';
 
 export const apiService = {
   // ========== TASKS ==========
