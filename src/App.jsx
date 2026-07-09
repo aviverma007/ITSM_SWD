@@ -30,7 +30,7 @@ const TYPE_ICON = { Bug:"🐛", Task:"✓", Story:"📖", Incident:"⚠️", Cha
 const SEED = [];
 
 // ====== HELPERS ======
-const appOf = id => APPS.find(a=>a.id===id);
+const appOf = (id, apps = []) => apps.find(a=>a.id===id) || { id, name: id, color: "#6366f1", icon: "📦" };
 const ago = ts => {
   const s = Math.floor((Date.now()-ts)/1000);
   return s<60?"now":s<3600?`${Math.floor(s/60)}m ago`:s<86400?`${Math.floor(s/3600)}h ago`:`${Math.floor(s/86400)}d ago`;
@@ -242,7 +242,7 @@ function ListView({tasks, onSelect}) {
 
 
 
-function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
+function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications}) {
   if(!task) return null;
   
   let selectedTask = null;
@@ -272,7 +272,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
       title = "Critical Tasks (Unblocked)";
       color = T.rose;
     } else if(task.type === "app") {
-      const app = appOf(task.app);
+      const app = appOf(task.app, applications);
       filteredTasks = tasks.filter(t => t.app === task.app);
       title = app.name;
       color = app.color;
@@ -280,7 +280,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
   }
 
   const sortedTasks = [...filteredTasks].sort((a,b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
-  const app = selectedTask ? appOf(selectedTask.app) : null;
+  const app = selectedTask ? appOf(selectedTask.app, applications) : null;
 
   // Task Detail View
   if(showDetail && selectedTask) {
@@ -385,7 +385,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
               <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
                 <Badge label={t.status} color={STATUS_COLOR[t.status]}/>
                 <Badge label={t.type} color={T.indigo}/>
-                <span style={{fontSize:10, color:T.dim}}>{appOf(t.app).name.split(" ")[0]}</span>
+                <span style={{fontSize:10, color:T.dim}}>{appOf(t.app, applications)?.name?.split(" ")[0]}</span>
                 {t.priority==="Critical"&&<span style={{fontSize:9, background:T.rose+"22", color:T.rose, padding:"2px 6px", borderRadius:3, fontWeight:700}}>🔥</span>}
               </div>
             </div>
@@ -1064,7 +1064,7 @@ export default function ITSM() {
       </div>
 
       {/* Drawer */}
-      {selected && <TaskDrawer task={selected} tasks={tasks} onClose={(detail)=>{if(detail && detail.type==="task") setSelected(detail); else setSelected(null);}} onUpdate={(id,k,v)=>updateTask(id, k, v)} assignees={assignees}/>}
+      {selected && <TaskDrawer task={selected} tasks={tasks} onClose={(detail)=>{if(detail && detail.type==="task") setSelected(detail); else setSelected(null);}} onUpdate={(id,k,v)=>updateTask(id, k, v)} assignees={assignees} applications={applications}/>}
 
       {/* Modal */}
       {showNew && <NewTaskModal onClose={()=>setShowNew(false)} onCreate={addTask} assignees={assignees} applications={applications} statuses={statuses}/>}
