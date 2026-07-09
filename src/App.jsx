@@ -938,10 +938,13 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                               console.log("Deleting ticket:", t.id);
                               const result = await apiService.deleteTask(t.id);
                               console.log("Delete result:", result);
-                              // Reload all data
-                              await loadData();
-                              // Also reload active tasks via parent callback
+                              
+                              // Remove from active list by updating parent
                               onDeleteTask(t.id);
+                              
+                              // Add to deleted list locally
+                              setDeletedTickets([...deletedTickets, t]);
+                              
                               alert("Ticket deleted successfully!");
                             } catch (err) {
                               console.error("Error deleting ticket:", err);
@@ -963,10 +966,13 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                                 console.log("Restoring ticket:", t.id);
                                 const result = await apiService.restoreTicket(t.id);
                                 console.log("Restore result:", result);
-                                // Reload all data
-                                await loadData();
-                                // Also reload active tasks via parent callback
+                                
+                                // Remove from deleted list
+                                setDeletedTickets(deletedTickets.filter(dt => dt.id !== t.id));
+                                
+                                // Add back to active via parent
                                 onRestoreTask(t.id);
+                                
                                 alert("Ticket restored successfully!");
                               } catch (err) {
                                 console.error("Error restoring ticket:", err);
@@ -985,8 +991,10 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                                 console.log("Permanently deleting ticket:", t.id);
                                 const result = await apiService.permanentlyDeleteTicket(t.id);
                                 console.log("Permanent delete result:", result);
-                                // Reload all data
-                                await loadData();
+                                
+                                // Remove from deleted list
+                                setDeletedTickets(deletedTickets.filter(dt => dt.id !== t.id));
+                                
                                 alert("Ticket permanently deleted!");
                               } catch (err) {
                                 console.error("Error permanently deleting ticket:", err);
