@@ -507,8 +507,6 @@ function NewTaskModal({onClose, onCreate, assignees}) {
 }
 
 function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
   const [assignees, setAssignees] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [applications, setApplications] = useState([...APPS]);
@@ -531,20 +529,8 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
 
   // Load from backend on mount
   useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated]);
-
-  function handlePasswordSubmit() {
-    if (password === "smart@54321") {
-      setIsAuthenticated(true);
-      setPassword("");
-    } else {
-      alert("❌ Incorrect password");
-      setPassword("");
-    }
-  }
+    loadData();
+  }, []);
 
   async function loadData() {
     // Load assignees from backend
@@ -671,51 +657,10 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
     localStorage.setItem("deletedTickets", JSON.stringify(deletedTicketIds));
   }, [deletedTicketIds]);
 
-  // Password prompt
-  if (!isAuthenticated) {
-    return (
-      <div style={{width:"100%", height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:T.bg}}>
-        <div style={{background:T.panel, borderRadius:14, padding:"40px", width:"min(90vw,400px)", border:`1px solid ${T.border}`}}>
-          <h2 style={{fontSize:20, fontWeight:900, marginBottom:24, color:T.text, textAlign:"center"}}>🔐 Admin Access Required</h2>
-          
-          <div style={{display:"flex", flexDirection:"column", gap:14}}>
-            <div>
-              <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:8, display:"block"}}>Password</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={e=>setPassword(e.target.value)}
-                onKeyPress={e=>e.key==="Enter"&&handlePasswordSubmit()}
-                placeholder="Enter admin password" 
-                style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13, outline:"none"}}
-                autoFocus
-              />
-            </div>
-
-            <button 
-              onClick={handlePasswordSubmit} 
-              style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"12px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s"}} 
-              onMouseEnter={e=>e.currentTarget.style.background=T.violet} 
-              onMouseLeave={e=>e.currentTarget.style.background=T.indigo}
-            >
-              Unlock Admin Panel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{width:"100%", display:"flex", flexDirection:"column", gap:24}}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
         <div style={{fontSize:24, fontWeight:900, color:T.text}}>🔐 Admin Panel</div>
-        <button 
-          onClick={() => setIsAuthenticated(false)} 
-          style={{background:T.rose, color:"#fff", border:"none", borderRadius:8, padding:"10px 14px", fontSize:12, fontWeight:700, cursor:"pointer"}}
-        >
-          Logout
-        </button>
       </div>
 
       {/* Tabs */}
