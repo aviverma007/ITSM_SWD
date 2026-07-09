@@ -4,69 +4,69 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export const apiService = {
-  // ========== TASKS ==========
+  // ========== TICKETS (Enhanced) ==========
   
   async getAllTasks() {
     try {
-      const res = await fetch(`${API_URL}/tasks`);
-      if (!res.ok) throw new Error('Failed to fetch tasks');
+      const res = await fetch(`${API_URL}/tickets`);
+      if (!res.ok) throw new Error('Failed to fetch tickets');
       return await res.json();
     } catch (err) {
-      console.error('Error fetching tasks:', err);
+      console.error('Error fetching tickets:', err);
       return [];
     }
   },
 
   async getTask(id) {
     try {
-      const res = await fetch(`${API_URL}/tasks/${id}`);
-      if (!res.ok) throw new Error('Failed to fetch task');
+      const res = await fetch(`${API_URL}/tickets/${id}`);
+      if (!res.ok) throw new Error('Failed to fetch ticket');
       return await res.json();
     } catch (err) {
-      console.error('Error fetching task:', err);
+      console.error('Error fetching ticket:', err);
       return null;
     }
   },
 
   async createTask(task) {
     try {
-      const res = await fetch(`${API_URL}/tasks`, {
+      const res = await fetch(`${API_URL}/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
       });
-      if (!res.ok) throw new Error('Failed to create task');
+      if (!res.ok) throw new Error('Failed to create ticket');
       return await res.json();
     } catch (err) {
-      console.error('Error creating task:', err);
+      console.error('Error creating ticket:', err);
       return null;
     }
   },
 
   async updateTask(id, updates) {
     try {
-      const res = await fetch(`${API_URL}/tasks/${id}`, {
+      const res = await fetch(`${API_URL}/tickets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-      if (!res.ok) throw new Error('Failed to update task');
+      if (!res.ok) throw new Error('Failed to update ticket');
       return await res.json();
     } catch (err) {
-      console.error('Error updating task:', err);
+      console.error('Error updating ticket:', err);
       return null;
     }
   },
 
   async deleteTask(id) {
     try {
-      const res = await fetch(`${API_URL}/tasks/${id}`, {
+      const res = await fetch(`${API_URL}/tickets/${id}`, {
         method: 'DELETE'
       });
-      if (!res.ok) throw new Error('Failed to delete task');
+      if (!res.ok) throw new Error('Failed to delete ticket');
       return await res.json();
     } catch (err) {
-      console.error('Error deleting task:', err);
+      console.error('Error deleting ticket:', err);
       return null;
     }
   },
