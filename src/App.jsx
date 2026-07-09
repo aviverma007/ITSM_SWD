@@ -523,10 +523,6 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
   });
 
   // Load from backend on mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
   async function loadData() {
     // Load assignees from backend
     const assigneesData = await apiService.getAllAssignees();
@@ -554,6 +550,10 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
     
     setHasChanges(false);
   }
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   async function addAssignee() {
     if(newAssignee.trim() && !assignees.includes(newAssignee)) {
