@@ -17,10 +17,22 @@ const VIEWS = [
 // Removed hardcoded APPS - now loaded from backend in useEffect
 const APPS = []; // Will be populated from database
 
-const T = {
-  bg:"#0f172a", text:"#e2e8f0", dim:"#94a3b8", panel:"#1e293b", card:"#1a2332", border:"#334155", faint:"#64748b",
-  indigo:"#6366f1", violet:"#a855f7", sky:"#0ea5e9", emerald:"#10b981", rose:"#f43f5e"
+const getTheme = (isDark) => {
+  if (isDark) {
+    return {
+      bg:"#0f172a", text:"#e2e8f0", dim:"#94a3b8", panel:"#1e293b", card:"#1a2332", border:"#334155", faint:"#64748b",
+      indigo:"#6366f1", violet:"#a855f7", sky:"#0ea5e9", emerald:"#10b981", rose:"#f43f5e"
+    };
+  } else {
+    // Light mode: white background, black text
+    return {
+      bg:"#ffffff", text:"#000000", dim:"#666666", panel:"#f5f5f5", card:"#ffffff", border:"#e0e0e0", faint:"#999999",
+      indigo:"#4f46e5", violet:"#7c3aed", sky:"#0284c7", emerald:"#059669", rose:"#dc2626"
+    };
+  }
 };
+
+const T = getTheme(false); // Default dark mode
 
 const PRI_COLOR = { Critical:"#f43f5e", High:"#f59e0b", Medium:"#3b82f6", Low:"#8b5cf6" };
 const STATUS_COLOR = { "To Do":"#94a3b8", "In Progress":"#3b82f6", "In Review":"#f59e0b", "Done":"#10b981" };
@@ -956,6 +968,10 @@ export default function ITSM() {
   const [appFilter, setAppFilter] = useState(() => localStorage.getItem("lastAppFilter") || "all");
   const [showProfile, setShowProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => localStorage.getItem("lastUser") || "user"); // "user" or "admin"
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("isDarkMode") !== "false");
+
+  // Get current theme based on mode
+  const T = getTheme(isDarkMode);
 
   // Save view to localStorage when it changes
   useEffect(() => {
@@ -971,6 +987,11 @@ export default function ITSM() {
   useEffect(() => {
     localStorage.setItem("lastUser", currentUser);
   }, [currentUser]);
+
+  // Save theme to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem("isDarkMode", isDarkMode);
+  }, [isDarkMode]);
 
   // Load tasks, assignees, applications, and statuses from backend on mount
   useEffect(() => {
@@ -1092,6 +1113,7 @@ export default function ITSM() {
         <div style={{display:"flex", gap:6, alignItems:"center", minWidth:"auto", justifyContent:"flex-end", flexShrink:0}}>
           {criticalCount>0&&<span style={{fontSize:8, background:T.rose+"22", color:T.rose, border:`1px solid ${T.rose}40`, padding:"2px 8px", borderRadius:4, fontWeight:700, whiteSpace:"nowrap"}}>🔥 {criticalCount}</span>}
           <button onClick={exportToExcel} style={{background:T.sky, color:"#fff", border:"none", borderRadius:8, padding:"10px 14px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>📊 Export</button>
+          <button onClick={()=>setIsDarkMode(!isDarkMode)} style={{background:isDarkMode?"#333333":"#ffffff", color:isDarkMode?"#ffffff":"#000000", border:`2px solid ${isDarkMode?"#555555":"#000000"}`, borderRadius:8, padding:"8px 12px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>{isDarkMode?"🌙 Dark":"☀️ Light"}</button>
           <button onClick={()=>setShowProfile(!showProfile)} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>{currentUser==="admin"?"👤 Admin":"👤 User"}</button>
           <button onClick={()=>setShowNew(true)} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"10px 16px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>+ New</button>
         </div>
