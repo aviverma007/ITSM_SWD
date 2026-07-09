@@ -71,6 +71,31 @@ export const apiService = {
     }
   },
 
+  async getDeletedTickets() {
+    try {
+      const res = await fetch(`${API_URL}/tickets/deleted/all`);
+      if (!res.ok) throw new Error('Failed to fetch deleted tickets');
+      return await res.json();
+    } catch (err) {
+      console.error('Error fetching deleted tickets:', err);
+      return [];
+    }
+  },
+
+  async restoreTicket(id) {
+    try {
+      const res = await fetch(`${API_URL}/tickets/${id}/restore`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Failed to restore ticket');
+      return await res.json();
+    } catch (err) {
+      console.error('Error restoring ticket:', err);
+      return null;
+    }
+  },
+
   // ========== ASSIGNEES ==========
 
   async getAllAssignees() {

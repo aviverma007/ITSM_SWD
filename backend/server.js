@@ -143,6 +143,38 @@ app.get('/api/tickets', async (req, res) => {
   }
 });
 
+// Get deleted tickets (Admin only)
+app.get('/api/tickets/deleted/all', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM tickets_enhanced WHERE is_deleted = 1 ORDER BY deleted_at DESC');
+    const tickets = result.recordset.map(row => ({
+      ...row,
+      labels: row.labels ? JSON.parse(row.labels) : [],
+      watchers: row.watchers ? JSON.parse(row.watchers) : [],
+      tags: row.tags ? JSON.parse(row.tags) : [],
+      attachments: row.attachments ? JSON.parse(row.attachments) : [],
+      related_tickets: row.related_tickets ? JSON.parse(row.related_tickets) : []
+    }));
+    res.json(tickets);
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Restore deleted ticket
+app.put('/api/tickets/:id/restore', async (req, res) => {
+  try {
+    await pool.request()
+      .input('id', sql.NVarChar, req.params.id)
+      .query('UPDATE tickets_enhanced SET is_deleted=0, deleted_at=NULL WHERE id = @id');
+    res.json({ success: true, message: 'Ticket restored' });
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get single ticket
 app.get('/api/tickets/:id', async (req, res) => {
   try {

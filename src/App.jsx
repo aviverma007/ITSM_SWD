@@ -400,10 +400,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
             </div>
           </div>
 
-          <div style={{display:"flex", gap:10, marginTop:10}}>
-            <button onClick={handleSaveChanges} style={{flex:1, background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s"}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>Save Changes</button>
-            <button onClick={()=>{if(window.confirm("Delete this ticket?")){onUpdate(selectedTask.id, {is_deleted: 1, deleted_at: Date.now()}); onClose();}}} style={{flex:1, background:T.rose, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>Delete</button>
-          </div>
+          <button onClick={handleSaveChanges} style={{width:"100%", background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s", marginTop:10}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>Save Changes</button>
         </div>
       </div>
     );
@@ -524,6 +521,7 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
   const [assignees, setAssignees] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [applications, setApplications] = useState([...APPS]);
+  const [deletedTickets, setDeletedTickets] = useState([]);
   const [newAssignee, setNewAssignee] = useState("");
   const [newStatus, setNewStatus] = useState("");
   const [newApp, setNewApp] = useState("");
@@ -536,10 +534,6 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
   const [ticketPriorityFilter, setTicketPriorityFilter] = useState("all");
   const [ticketAppFilter, setTicketAppFilter] = useState("all");
   const [showDeleted, setShowDeleted] = useState(false);
-  const [deletedTicketIds, setDeletedTicketIds] = useState(() => {
-    const stored = localStorage.getItem("deletedTickets");
-    return stored ? JSON.parse(stored) : [];
-  });
 
   // Load from backend on mount
   async function loadData() {
@@ -565,6 +559,14 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
       setApplications(applicationsData);
     } else {
       setApplications([]);
+    }
+
+    // Load deleted tickets from backend
+    const deletedData = await apiService.getDeletedTickets();
+    if (deletedData && deletedData.length > 0) {
+      setDeletedTickets(deletedData);
+    } else {
+      setDeletedTickets([]);
     }
     
     setHasChanges(false);
@@ -666,8 +668,7 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
   }
 
   // Filter and search tickets
-  const deletedTickets = tasks.filter(t => deletedTicketIds.includes(t.id));
-  const activeTickets = tasks.filter(t => !deletedTicketIds.includes(t.id));
+  const activeTickets = tasks.filter(t => !deletedTickets.find(dt => dt.id === t.id));
   let displayTickets = showDeleted ? deletedTickets : activeTickets;
   
   let filteredTickets = displayTickets;
@@ -689,11 +690,6 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
   if(ticketAppFilter !== "all") {
     filteredTickets = filteredTickets.filter(t => t.app === ticketAppFilter);
   }
-
-  // Save deletedTicketIds to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("deletedTickets", JSON.stringify(deletedTicketIds));
-  }, [deletedTicketIds]);
 
   return (
     <div style={{width:"100%", display:"flex", flexDirection:"column", gap:24}}>
@@ -883,31 +879,27 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                       </div>
                     </div>
                     {!showDeleted ? (
-                      <div style={{display:"flex", gap:6}}>
-                        <button 
-                          onClick={() => {
-                            setDeletedTicketIds([...deletedTicketIds, t.id]);
-                          }}
-                          style={{background:T.rose, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
-                          title="Mark as deleted (can restore)"
-                        >
-                          Delete
-                        </button>
-                        <button 
-                          onClick={async () => {
+                      <button 
+                        onClick={async () => {
+                          if(window.confirm("Delete this ticket? Users won't see it anymore.")) {
                             await apiService.deleteTask(t.id);
-                            onDeleteTask?.(t.id);
-                          }}
-                          style={{background:"#8b3a3a", color:"#fff", border:"none", borderRadius:6, padding:"8px 10px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
-                          title="Permanently delete (cannot restore)"
-                        >
-                          🗑️
-                        </button>
-                      </div>
+                            // Remove from display
+                            const deleted = await apiService.getDeletedTickets();
+                            setDeletedTickets(deleted);
+                          }
+                        }}
+                        style={{background:T.rose, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
+                        title="Soft delete (can restore)"
+                      >
+                        Delete
+                      </button>
                     ) : (
                       <button 
-                        onClick={() => {
-                          setDeletedTicketIds(deletedTicketIds.filter(id => id !== t.id));
+                        onClick={async () => {
+                          await apiService.restoreTicket(t.id);
+                          // Reload deleted tickets
+                          const deleted = await apiService.getDeletedTickets();
+                          setDeletedTickets(deleted);
                         }}
                         style={{background:T.emerald, color:"#fff", border:"none", borderRadius:6, padding:"8px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
                       >
