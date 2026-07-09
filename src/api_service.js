@@ -1,6 +1,7 @@
 // API_SERVICE.js - Place this in your src folder
 
-const API_URL = 'http://192.168.66.34:5001/api';
+// Get API URL from environment variable, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export const apiService = {
   // ========== TASKS ==========

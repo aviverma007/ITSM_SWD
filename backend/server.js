@@ -11,11 +11,11 @@ app.use(express.json());
 
 // ==================== SQL SERVER CONFIG ====================
 const dbConfig = {
-  server: process.env.DB_SERVER || '2023-DT1',
+  server: process.env.DB_SERVER || 'ATTEND1',
   port: parseInt(process.env.DB_PORT || '1433', 10),
-  database: process.env.DB_NAME || 'itsm_app_db',
-  user: process.env.DB_USER || 'itsm_user_new',
-  password: process.env.DB_PASSWORD || 'NewItsm@2024Secure',
+  database: process.env.DB_NAME || 'itsm_swd',
+  user: process.env.DB_USER || 'itsm_app_user',
+  password: process.env.DB_PASSWORD || 'Itsm@App2024Secure',
   options: {
     encrypt: false,             // on-prem SQL Server, not Azure
     trustServerCertificate: true
