@@ -438,7 +438,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
   );
 }
 
-function NewTaskModal({onClose, onCreate, assignees}) {
+function NewTaskModal({onClose, onCreate, assignees, applications}) {
   const [form, setForm] = useState({ app:"sap", title:"", description:"", priority:"Medium", type:"Task", assignee:assignees && assignees.length > 0 ? assignees[0] : "Unassigned", status:"To Do" });
 
   function handleCreate() {
@@ -1095,7 +1095,7 @@ export default function ITSM() {
       {selected && <TaskDrawer task={selected} tasks={tasks} onClose={(detail)=>{if(detail && detail.type==="task") setSelected(detail); else setSelected(null);}} onUpdate={(id,k,v)=>updateTask(id, k, v)} assignees={assignees}/>}
 
       {/* Modal */}
-      {showNew && <NewTaskModal onClose={()=>setShowNew(false)} onCreate={addTask} assignees={assignees}/>}
+      {showNew && <NewTaskModal onClose={()=>setShowNew(false)} onCreate={addTask} assignees={assignees} applications={applications}/>}
 
       <style>{`
         @keyframes slideIn {
