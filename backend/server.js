@@ -91,9 +91,42 @@ async function ensureTables() {
       created BIGINT NOT NULL,
       updated BIGINT NOT NULL,
       created_by NVARCHAR(100),
+      last_modified_by NVARCHAR(100)
+    )
+  `);
+
+  await pool.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='deleted_tickets' AND xtype='U')
+    CREATE TABLE deleted_tickets (
+      id NVARCHAR(50) PRIMARY KEY,
+      ticket_number INT,
+      app NVARCHAR(100) NOT NULL,
+      title NVARCHAR(500) NOT NULL,
+      description NVARCHAR(MAX),
+      status NVARCHAR(50) NOT NULL,
+      priority NVARCHAR(50) NOT NULL,
+      type NVARCHAR(50) NOT NULL,
+      assignee NVARCHAR(100),
+      sprint NVARCHAR(100),
+      story INT,
+      story_points INT,
+      due_date BIGINT,
+      labels NVARCHAR(MAX),
+      tags NVARCHAR(MAX),
+      reporter NVARCHAR(100),
+      watchers NVARCHAR(MAX),
+      environment NVARCHAR(200),
+      impact NVARCHAR(100),
+      effort_estimate INT,
+      time_spent_minutes INT,
+      attachments NVARCHAR(MAX),
+      related_tickets NVARCHAR(MAX),
+      created BIGINT NOT NULL,
+      updated BIGINT NOT NULL,
+      created_by NVARCHAR(100),
       last_modified_by NVARCHAR(100),
-      is_deleted BIT DEFAULT 0,
-      deleted_at BIGINT
+      deleted_at BIGINT NOT NULL,
+      deleted_by NVARCHAR(100)
     )
   `);
 
@@ -181,7 +214,7 @@ app.get('/api/tickets', async (req, res) => {
 // Get deleted tickets (Admin only)
 app.get('/api/tickets/deleted/all', async (req, res) => {
   try {
-    const result = await pool.request().query('SELECT * FROM tickets_enhanced WHERE is_deleted = 1 ORDER BY deleted_at DESC');
+    const result = await pool.request().query('SELECT * FROM deleted_tickets ORDER BY deleted_at DESC');
     const tickets = result.recordset.map(row => ({
       ...row,
       labels: row.labels ? JSON.parse(row.labels) : [],
@@ -200,9 +233,54 @@ app.get('/api/tickets/deleted/all', async (req, res) => {
 // Restore deleted ticket
 app.put('/api/tickets/:id/restore', async (req, res) => {
   try {
+    // Get the ticket from deleted_tickets
+    const getResult = await pool.request()
+      .input('id', sql.NVarChar, req.params.id)
+      .query('SELECT * FROM deleted_tickets WHERE id = @id');
+    
+    if (getResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Deleted ticket not found' });
+    }
+    
+    const ticket = getResult.recordset[0];
+    
+    // Insert back into tickets_enhanced
+    await pool.request()
+      .input('id', sql.NVarChar, ticket.id)
+      .input('ticket_number', sql.Int, ticket.ticket_number)
+      .input('app', sql.NVarChar, ticket.app)
+      .input('title', sql.NVarChar, ticket.title)
+      .input('description', sql.NVarChar, ticket.description)
+      .input('status', sql.NVarChar, ticket.status)
+      .input('priority', sql.NVarChar, ticket.priority)
+      .input('type', sql.NVarChar, ticket.type)
+      .input('assignee', sql.NVarChar, ticket.assignee)
+      .input('sprint', sql.NVarChar, ticket.sprint)
+      .input('story', sql.Int, ticket.story)
+      .input('story_points', sql.Int, ticket.story_points)
+      .input('due_date', sql.BigInt, ticket.due_date)
+      .input('labels', sql.NVarChar, ticket.labels)
+      .input('tags', sql.NVarChar, ticket.tags)
+      .input('reporter', sql.NVarChar, ticket.reporter)
+      .input('watchers', sql.NVarChar, ticket.watchers)
+      .input('environment', sql.NVarChar, ticket.environment)
+      .input('impact', sql.NVarChar, ticket.impact)
+      .input('effort_estimate', sql.Int, ticket.effort_estimate)
+      .input('time_spent_minutes', sql.Int, ticket.time_spent_minutes)
+      .input('attachments', sql.NVarChar, ticket.attachments)
+      .input('related_tickets', sql.NVarChar, ticket.related_tickets)
+      .input('created', sql.BigInt, ticket.created)
+      .input('updated', sql.BigInt, ticket.updated)
+      .input('created_by', sql.NVarChar, ticket.created_by)
+      .input('last_modified_by', sql.NVarChar, ticket.last_modified_by)
+      .query(`INSERT INTO tickets_enhanced (id, ticket_number, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by) 
+              VALUES (@id, @ticket_number, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by)`);
+    
+    // Delete from deleted_tickets
     await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('UPDATE tickets_enhanced SET is_deleted=0, deleted_at=NULL WHERE id = @id');
+      .query('DELETE FROM deleted_tickets WHERE id = @id');
+    
     res.json({ success: true, message: 'Ticket restored' });
   } catch (err) {
     console.error("ERROR:", err.message);
@@ -343,10 +421,10 @@ app.delete('/api/tickets/:id/permanent', async (req, res) => {
       .input('ticket_id', sql.NVarChar, req.params.id)
       .query('DELETE FROM activity_log WHERE task_id = @ticket_id');
     
-    // Then permanently delete from tickets_enhanced
+    // Then permanently delete from deleted_tickets table
     await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('DELETE FROM tickets_enhanced WHERE id = @id');
+      .query('DELETE FROM deleted_tickets WHERE id = @id');
     
     res.json({ success: true, message: 'Ticket permanently deleted' });
   } catch (err) {
@@ -355,21 +433,67 @@ app.delete('/api/tickets/:id/permanent', async (req, res) => {
   }
 });
 
-// Soft delete ticket (mark as deleted, can be restored)
+// Soft delete ticket (move to deleted_tickets table)
 app.delete('/api/tickets/:id', async (req, res) => {
   try {
     const now = Date.now();
+    
+    // Get the ticket first
+    const getResult = await pool.request()
+      .input('id', sql.NVarChar, req.params.id)
+      .query('SELECT * FROM tickets_enhanced WHERE id = @id');
+    
+    if (getResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+    
+    const ticket = getResult.recordset[0];
+    
+    // Insert into deleted_tickets table
+    await pool.request()
+      .input('id', sql.NVarChar, ticket.id)
+      .input('ticket_number', sql.Int, ticket.ticket_number)
+      .input('app', sql.NVarChar, ticket.app)
+      .input('title', sql.NVarChar, ticket.title)
+      .input('description', sql.NVarChar, ticket.description)
+      .input('status', sql.NVarChar, ticket.status)
+      .input('priority', sql.NVarChar, ticket.priority)
+      .input('type', sql.NVarChar, ticket.type)
+      .input('assignee', sql.NVarChar, ticket.assignee)
+      .input('sprint', sql.NVarChar, ticket.sprint)
+      .input('story', sql.Int, ticket.story)
+      .input('story_points', sql.Int, ticket.story_points)
+      .input('due_date', sql.BigInt, ticket.due_date)
+      .input('labels', sql.NVarChar, ticket.labels)
+      .input('tags', sql.NVarChar, ticket.tags)
+      .input('reporter', sql.NVarChar, ticket.reporter)
+      .input('watchers', sql.NVarChar, ticket.watchers)
+      .input('environment', sql.NVarChar, ticket.environment)
+      .input('impact', sql.NVarChar, ticket.impact)
+      .input('effort_estimate', sql.Int, ticket.effort_estimate)
+      .input('time_spent_minutes', sql.Int, ticket.time_spent_minutes)
+      .input('attachments', sql.NVarChar, ticket.attachments)
+      .input('related_tickets', sql.NVarChar, ticket.related_tickets)
+      .input('created', sql.BigInt, ticket.created)
+      .input('updated', sql.BigInt, ticket.updated)
+      .input('created_by', sql.NVarChar, ticket.created_by)
+      .input('last_modified_by', sql.NVarChar, ticket.last_modified_by)
+      .input('deleted_at', sql.BigInt, now)
+      .input('deleted_by', sql.NVarChar, 'admin')
+      .query(`INSERT INTO deleted_tickets (id, ticket_number, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by, deleted_at, deleted_by) 
+              VALUES (@id, @ticket_number, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by, @deleted_at, @deleted_by)`);
+    
+    // Delete from tickets_enhanced
     await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .input('deleted_at', sql.BigInt, now)
-      .query('UPDATE tickets_enhanced SET is_deleted=1, deleted_at=@deleted_at WHERE id = @id');
+      .query('DELETE FROM tickets_enhanced WHERE id = @id');
     
-    // Also log to activity
+    // Delete activity log
     await pool.request()
       .input('ticket_id', sql.NVarChar, req.params.id)
       .query('DELETE FROM activity_log WHERE task_id = @ticket_id');
     
-    res.json({ success: true, message: 'Ticket deleted' });
+    res.json({ success: true, message: 'Ticket deleted and moved to deleted_tickets' });
   } catch (err) {
     console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
