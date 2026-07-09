@@ -124,30 +124,34 @@ async function ensureTables() {
 
 // ==================== TASK ENDPOINTS ====================
 
-// Get all tasks
-app.get('/api/tasks', async (req, res) => {
+// Get all tickets
+app.get('/api/tickets', async (req, res) => {
   try {
-    const result = await pool.request().query('SELECT * FROM tasks ORDER BY updated DESC');
-    const tasks = result.recordset.map(row => ({
+    const result = await pool.request().query('SELECT * FROM tickets_enhanced ORDER BY created DESC');
+    const tickets = result.recordset.map(row => ({
       ...row,
-      labels: row.labels ? JSON.parse(row.labels) : []
+      labels: row.labels ? JSON.parse(row.labels) : [],
+      watchers: row.watchers ? JSON.parse(row.watchers) : [],
+      tags: row.tags ? JSON.parse(row.tags) : [],
+      attachments: row.attachments ? JSON.parse(row.attachments) : [],
+      related_tickets: row.related_tickets ? JSON.parse(row.related_tickets) : []
     }));
-    res.json(tasks);
+    res.json(tickets);
   } catch (err) {
     console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get single task
-app.get('/api/tasks/:id', async (req, res) => {
+// Get single ticket
+app.get('/api/tickets/:id', async (req, res) => {
   try {
     const result = await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('SELECT * FROM tasks WHERE id = @id');
+      .query('SELECT * FROM tickets_enhanced WHERE id = @id');
     const row = result.recordset[0];
     if (!row) {
-      res.status(404).json({ error: 'Task not found' });
+      res.status(404).json({ error: 'Ticket not found' });
       return;
     }
     row.labels = row.labels ? JSON.parse(row.labels) : [];
@@ -158,10 +162,10 @@ app.get('/api/tasks/:id', async (req, res) => {
   }
 });
 
-// Create task
-app.post('/api/tasks', async (req, res) => {
+// Create ticket
+app.post('/api/tickets', async (req, res) => {
   try {
-    const { id, app: appName, title, description, status, priority, type, assignee, sprint, story, labels } = req.body;
+    const { id, app: appName, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate } = req.body;
     const now = Date.now();
 
     await pool.request()
@@ -175,44 +179,54 @@ app.post('/api/tasks', async (req, res) => {
       .input('assignee', sql.NVarChar, assignee)
       .input('sprint', sql.NVarChar, sprint || null)
       .input('story', sql.Int, story || null)
+      .input('story_points', sql.Int, story_points || null)
+      .input('due_date', sql.BigInt, due_date || null)
       .input('labels', sql.NVarChar, JSON.stringify(labels || []))
+      .input('tags', sql.NVarChar, JSON.stringify(tags || []))
+      .input('reporter', sql.NVarChar, reporter || null)
+      .input('watchers', sql.NVarChar, JSON.stringify(watchers || []))
+      .input('environment', sql.NVarChar, environment || null)
+      .input('impact', sql.NVarChar, impact || null)
+      .input('effort_estimate', sql.Int, effort_estimate || null)
       .input('created', sql.BigInt, now)
       .input('updated', sql.BigInt, now)
-      .query(`INSERT INTO tasks (id, app, title, description, status, priority, type, assignee, sprint, story, labels, created, updated)
-              VALUES (@id, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @labels, @created, @updated)`);
+      .input('created_by', sql.NVarChar, assignee)
+      .input('last_modified_by', sql.NVarChar, assignee)
+      .query(`INSERT INTO tickets_enhanced (id, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, created, updated, created_by, last_modified_by)
+              VALUES (@id, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @created, @updated, @created_by, @last_modified_by)`);
 
-    res.json({ id, success: true, message: 'Task created' });
+    res.json({ id, success: true, message: 'Ticket created' });
   } catch (err) {
     console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Update task
-app.put('/api/tasks/:id', async (req, res) => {
+// Update ticket
+app.put('/api/tickets/:id', async (req, res) => {
   try {
-    const { app: appName, title, description, status, priority, type, assignee, sprint, story, labels } = req.body;
+    const { app: appName, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes } = req.body;
     const now = Date.now();
 
-    // Log activity (best-effort diff against previous row)
+    // Log activity
     const oldResult = await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('SELECT * FROM tasks WHERE id = @id');
-    const oldTask = oldResult.recordset[0];
+      .query('SELECT * FROM tickets_enhanced WHERE id = @id');
+    const oldTicket = oldResult.recordset[0];
 
-    if (oldTask) {
+    if (oldTicket) {
       for (let key in req.body) {
-        if (key !== 'labels' && oldTask[key] !== req.body[key]) {
+        if (key !== 'labels' && key !== 'tags' && key !== 'watchers' && oldTicket[key] !== req.body[key]) {
           await pool.request()
-            .input('task_id', sql.NVarChar, req.params.id)
+            .input('ticket_id', sql.NVarChar, req.params.id)
             .input('action', sql.NVarChar, 'update')
             .input('changed_field', sql.NVarChar, key)
-            .input('old_value', sql.NVarChar, String(oldTask[key])) 
+            .input('old_value', sql.NVarChar, String(oldTicket[key])) 
             .input('new_value', sql.NVarChar, String(req.body[key]))
             .input('changed_by', sql.NVarChar, 'user')
             .input('timestamp', sql.BigInt, now)
             .query(`INSERT INTO activity_log (task_id, action, changed_field, old_value, new_value, changed_by, timestamp)
-                    VALUES (@task_id, @action, @changed_field, @old_value, @new_value, @changed_by, @timestamp)`);
+                    VALUES (@ticket_id, @action, @changed_field, @old_value, @new_value, @changed_by, @timestamp)`);
         }
       }
     }
@@ -228,29 +242,66 @@ app.put('/api/tasks/:id', async (req, res) => {
       .input('assignee', sql.NVarChar, assignee)
       .input('sprint', sql.NVarChar, sprint || null)
       .input('story', sql.Int, story || null)
+      .input('story_points', sql.Int, story_points || null)
+      .input('due_date', sql.BigInt, due_date || null)
       .input('labels', sql.NVarChar, JSON.stringify(labels || []))
+      .input('tags', sql.NVarChar, JSON.stringify(tags || []))
+      .input('reporter', sql.NVarChar, reporter || null)
+      .input('watchers', sql.NVarChar, JSON.stringify(watchers || []))
+      .input('environment', sql.NVarChar, environment || null)
+      .input('impact', sql.NVarChar, impact || null)
+      .input('effort_estimate', sql.Int, effort_estimate || null)
+      .input('time_spent_minutes', sql.Int, time_spent_minutes || null)
       .input('updated', sql.BigInt, now)
-      .query(`UPDATE tasks SET app=@app, title=@title, description=@description, status=@status, priority=@priority,
-              type=@type, assignee=@assignee, sprint=@sprint, story=@story, labels=@labels, updated=@updated
+      .input('last_modified_by', sql.NVarChar, 'user')
+      .query(`UPDATE tickets_enhanced SET app=@app, title=@title, description=@description, status=@status, priority=@priority,
+              type=@type, assignee=@assignee, sprint=@sprint, story=@story, story_points=@story_points, due_date=@due_date, 
+              labels=@labels, tags=@tags, reporter=@reporter, watchers=@watchers, environment=@environment, impact=@impact, 
+              effort_estimate=@effort_estimate, time_spent_minutes=@time_spent_minutes, updated=@updated, last_modified_by=@last_modified_by
               WHERE id=@id`);
 
-    res.json({ success: true, message: 'Task updated' });
+    res.json({ success: true, message: 'Ticket updated' });
   } catch (err) {
     console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete task
-app.delete('/api/tasks/:id', async (req, res) => {
+// Delete ticket (soft delete)
+app.delete('/api/tickets/:id', async (req, res) => {
   try {
+    const now = Date.now();
     await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('DELETE FROM tasks WHERE id = @id');
+      .input('deleted_at', sql.BigInt, now)
+      .query('UPDATE tickets_enhanced SET is_deleted=1, deleted_at=@deleted_at WHERE id = @id');
+    
+    // Also log to activity
     await pool.request()
-      .input('task_id', sql.NVarChar, req.params.id)
-      .query('DELETE FROM activity_log WHERE task_id = @task_id');
-    res.json({ success: true, message: 'Task deleted' });
+      .input('ticket_id', sql.NVarChar, req.params.id)
+      .query('DELETE FROM activity_log WHERE task_id = @ticket_id');
+    
+    res.json({ success: true, message: 'Ticket deleted' });
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get ticket stats
+app.get('/api/tickets/stats/summary', async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT
+        COUNT(*) as total_tickets,
+        SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) as completed_tickets,
+        SUM(CASE WHEN priority = 'Critical' AND status != 'Done' THEN 1 ELSE 0 END) as critical_tickets,
+        SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress_tickets,
+        SUM(CASE WHEN impact = 'Critical' THEN 1 ELSE 0 END) as critical_impact_tickets
+      FROM tickets_enhanced
+      WHERE is_deleted = 0
+    `);
+    res.json(result.recordset[0]);
   } catch (err) {
     console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
@@ -445,8 +496,10 @@ app.get('/api/stats', async (req, res) => {
         COUNT(*) as total_tasks,
         SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) as completed_tasks,
         SUM(CASE WHEN priority = 'Critical' AND status != 'Done' THEN 1 ELSE 0 END) as critical_tasks,
-        SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress_tasks
-      FROM tasks
+        SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress_tasks,
+        SUM(CASE WHEN impact = 'Critical' THEN 1 ELSE 0 END) as critical_impact_count
+      FROM tickets_enhanced
+      WHERE is_deleted = 0
     `);
     res.json(result.recordset[0]);
   } catch (err) {
