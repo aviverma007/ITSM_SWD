@@ -938,10 +938,8 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                               console.log("Deleting ticket:", t.id);
                               const result = await apiService.deleteTask(t.id);
                               console.log("Delete result:", result);
-                              // Reload deleted tickets to show updated list
-                              const deleted = await apiService.getDeletedTickets();
-                              console.log("Deleted tickets:", deleted);
-                              setDeletedTickets(deleted);
+                              // Reload all data
+                              await loadData();
                               // Also reload active tasks via parent callback
                               onDeleteTask(t.id);
                               alert("Ticket deleted successfully!");
@@ -965,10 +963,8 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                                 console.log("Restoring ticket:", t.id);
                                 const result = await apiService.restoreTicket(t.id);
                                 console.log("Restore result:", result);
-                                // Reload deleted tickets
-                                const deleted = await apiService.getDeletedTickets();
-                                console.log("Deleted tickets after restore:", deleted);
-                                setDeletedTickets(deleted);
+                                // Reload all data
+                                await loadData();
                                 // Also reload active tasks via parent callback
                                 onRestoreTask(t.id);
                                 alert("Ticket restored successfully!");
@@ -985,10 +981,17 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                         <button 
                           onClick={async () => {
                             if(window.confirm("Permanently delete this ticket? This cannot be undone.")) {
-                              await apiService.permanentlyDeleteTicket(t.id);
-                              // Reload deleted tickets
-                              const deleted = await apiService.getDeletedTickets();
-                              setDeletedTickets(deleted);
+                              try {
+                                console.log("Permanently deleting ticket:", t.id);
+                                const result = await apiService.permanentlyDeleteTicket(t.id);
+                                console.log("Permanent delete result:", result);
+                                // Reload all data
+                                await loadData();
+                                alert("Ticket permanently deleted!");
+                              } catch (err) {
+                                console.error("Error permanently deleting ticket:", err);
+                                alert("Failed to permanently delete ticket: " + err.message);
+                              }
                             }
                           }}
                           style={{background:"#8b3a3a", color:"#fff", border:"none", borderRadius:6, padding:"8px 10px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}
