@@ -46,12 +46,19 @@ function Btn({onClick, children, sm, disabled, style}) {
   return <button onClick={onClick} disabled={disabled} style={{...style, background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:sm?"6px 12px":"10px 16px", fontSize:sm?11:12, fontWeight:700, cursor:disabled?"not-allowed":"pointer", opacity:disabled?0.5:1, transition:"all 0.2s"}} onMouseEnter={e=>!disabled&&(e.currentTarget.style.background=T.violet)} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>{children}</button>;
 }
 
-function Dashboard({tasks, applications, onSelect}) {
+function Dashboard({tasks, applications, onSelect, statuses}) {
   // Count based on actual database statuses
   const total = tasks.length;
-  const inProgress = tasks.filter(t=>t.status==="In Progress" || t.status==="OPEN" || t.status==="WIP").length;
-  const completed = tasks.filter(t=>t.status==="Done" || t.status==="CLOSED").length;
-  const critical = tasks.filter(t=>t.priority==="Critical" && (t.status==="OPEN" || t.status==="In Progress" || t.status==="WIP")).length;
+  
+  // IN PROGRESS = All statuses EXCEPT "CLOSED" and "Done"
+  const completedStatuses = ["Done", "CLOSED"];
+  const inProgress = tasks.filter(t => !completedStatuses.includes(t.status)).length;
+  
+  // COMPLETED = "Done" or "CLOSED" statuses only
+  const completed = tasks.filter(t => t.status === "Done" || t.status === "CLOSED").length;
+  
+  // CRITICAL = Critical priority with IN PROGRESS statuses (not Done/Closed)
+  const critical = tasks.filter(t => t.priority === "Critical" && !completedStatuses.includes(t.status)).length;
   
   const stats = [
     { label:"Total Tasks", value:total, color:T.sky, filter:"all" },
@@ -295,8 +302,9 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
         setTitle("All Tasks");
         setColor(T.sky);
       } else if(task.filter === "inprogress") {
-        // Include In Progress, WIP, and OPEN statuses
-        setFilteredTasks(tasks.filter(t => t.status === "In Progress" || t.status === "WIP" || t.status === "OPEN"));
+        // Include all statuses EXCEPT "Done" and "CLOSED"
+        const completedStatuses = ["Done", "CLOSED"];
+        setFilteredTasks(tasks.filter(t => !completedStatuses.includes(t.status)));
         setTitle("In Progress Tasks");
         setColor(T.indigo);
       } else if(task.filter === "done") {
@@ -306,7 +314,8 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
         setColor(T.emerald);
       } else if(task.filter === "critical") {
         // Critical priority that are not done/closed
-        setFilteredTasks(tasks.filter(t => t.priority === "Critical" && t.status !== "Done" && t.status !== "CLOSED"));
+        const completedStatuses = ["Done", "CLOSED"];
+        setFilteredTasks(tasks.filter(t => t.priority === "Critical" && !completedStatuses.includes(t.status)));
         setTitle("Critical Tasks (Unblocked)");
         setColor(T.rose);
       } else if(task.type === "app") {
@@ -1111,7 +1120,7 @@ export default function ITSM() {
         {currentUser==="admin" && <AdminPanel tasks={tasks} onDeleteTask={(id)=>{}} onRestoreTask={(id)=>{}}/>}
         {currentUser==="user" && (
           <>
-            {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected}/>}
+            {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected} statuses={statuses}/>}
             {view==="kanban" && <Kanban tasks={visibleTasks} onSelect={setSelected} onUpdate={updateTask} statuses={statuses} applications={applications}/>}
             {view==="list" && <ListView tasks={visibleTasks} onSelect={setSelected} applications={applications} statuses={statuses}/>}
           </>
