@@ -47,20 +47,21 @@ function Btn({onClick, children, sm, disabled, style}) {
 }
 
 function Dashboard({tasks, applications, onSelect}) {
-  const done = tasks.filter(t=>t.status==="Done").length;
-  const inProgress = tasks.filter(t=>t.status==="In Progress").length;
-  const blocked = tasks.filter(t=>t.priority==="Critical"&&t.status!=="Done").length;
+  // Update to match your database statuses: CLOSED, OPEN, WIP, etc.
+  const inProgress = tasks.filter(t=>t.status==="In Progress" || t.status==="WIP").length;
+  const completed = tasks.filter(t=>t.status==="Done" || t.status==="CLOSED").length;
+  const critical = tasks.filter(t=>t.priority==="Critical" && (t.status==="OPEN" || t.status==="In Progress" || t.status==="WIP")).length;
+  
   const stats = [
-    { label:"Total Tasks", value:tasks.length, color:T.sky, filter:"all" },
     { label:"In Progress", value:inProgress, color:T.indigo, filter:"inprogress" },
-    { label:"Completed", value:done, color:T.emerald, filter:"done" },
-    { label:"Critical (Unblock)", value:blocked, color:T.rose, filter:"critical" },
+    { label:"Completed", value:completed, color:T.emerald, filter:"done" },
+    { label:"Critical (Unblock)", value:critical, color:T.rose, filter:"critical" },
   ];
-  const appBreakdown = useMemo(()=>(applications || []).map(a=>({ app:a, count:tasks.filter(t=>t.app===a.id).length, done:tasks.filter(t=>t.app===a.id&&t.status==="Done").length })).sort((x,y)=>y.count-x.count),[tasks, applications]);
+  const appBreakdown = useMemo(()=>(applications || []).map(a=>({ app:a, count:tasks.filter(t=>t.app===a.id).length, done:tasks.filter(t=>t.app===a.id&&(t.status==="Done"||t.status==="CLOSED")).length })).sort((x,y)=>y.count-x.count),[tasks, applications]);
 
   return (
     <div style={{width:"100%", display:"flex", flexDirection:"column", gap:12}}>
-      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, width:"100%", flexShrink:0}}>
+      <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, width:"100%", flexShrink:0}}>
         {stats.map(s=>(
           <div key={s.label} style={{background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:12, cursor:"pointer", transition:"all 0.3s", minHeight:95, display:"flex", flexDirection:"column", justifyContent:"space-between"}} onClick={()=>onSelect({type:"filter", filter:s.filter})} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
             <div style={{fontSize:10, color:T.dim, fontWeight:700, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6}}>{s.label}</div>
