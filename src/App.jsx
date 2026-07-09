@@ -374,7 +374,10 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
             </div>
           </div>
 
-          <button onClick={handleSaveChanges} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s", marginTop:10}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>Save Changes</button>
+          <div style={{display:"flex", gap:10, marginTop:10}}>
+            <button onClick={handleSaveChanges} style={{flex:1, background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s"}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>Save Changes</button>
+            <button onClick={()=>{if(window.confirm("Delete this ticket?")){onUpdate(selectedTask.id, {is_deleted: 1, deleted_at: Date.now()}); onClose();}}} style={{flex:1, background:T.rose, color:"#fff", border:"none", borderRadius:8, padding:"14px 16px", fontSize:14, fontWeight:700, cursor:"pointer", transition:"all 0.2s"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>Delete</button>
+          </div>
         </div>
       </div>
     );

@@ -127,7 +127,7 @@ async function ensureTables() {
 // Get all tickets
 app.get('/api/tickets', async (req, res) => {
   try {
-    const result = await pool.request().query('SELECT * FROM tickets_enhanced ORDER BY created DESC');
+    const result = await pool.request().query('SELECT * FROM tickets_enhanced WHERE is_deleted = 0 ORDER BY created DESC');
     const tickets = result.recordset.map(row => ({
       ...row,
       labels: row.labels ? JSON.parse(row.labels) : [],
@@ -148,7 +148,7 @@ app.get('/api/tickets/:id', async (req, res) => {
   try {
     const result = await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('SELECT * FROM tickets_enhanced WHERE id = @id');
+      .query('SELECT * FROM tickets_enhanced WHERE id = @id AND is_deleted = 0');
     const row = result.recordset[0];
     if (!row) {
       res.status(404).json({ error: 'Ticket not found' });
