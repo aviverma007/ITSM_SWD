@@ -598,6 +598,7 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
 
   async function submitChanges() {
     // Save all changes to backend on submit
+    
     // Remove all old assignees
     const oldAssignees = await apiService.getAllAssignees();
     for (const assignee of oldAssignees) {
@@ -616,6 +617,32 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
     // Add new statuses
     for (const name of statuses) {
       await apiService.addStatusOption({ name, color: "#3b82f6" });
+    }
+
+    // Remove all old applications
+    const oldApplications = await apiService.getAllApplications();
+    for (const app of oldApplications) {
+      // Note: Backend doesn't have delete endpoint for applications, so we skip deletion
+      // In production, you'd add this endpoint
+    }
+    // Add new applications
+    for (const app of applications) {
+      // Note: Need to add createApplication endpoint to backend
+      // For now, applications are fetched but not posted
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/applications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            id: app.id || app.name.toLowerCase().replace(/\s+/g, '_'),
+            name: app.name, 
+            color: app.color || '#6366f1',
+            icon: app.icon || '📦'
+          })
+        });
+      } catch (err) {
+        console.error('Error saving application:', err);
+      }
     }
 
     setHasChanges(false);

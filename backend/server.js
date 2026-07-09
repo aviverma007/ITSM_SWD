@@ -357,6 +357,38 @@ app.get('/api/applications', async (req, res) => {
   }
 });
 
+// Add application
+app.post('/api/applications', async (req, res) => {
+  try {
+    const { id, name, color, icon } = req.body;
+    const now = Date.now();
+    await pool.request()
+      .input('id', sql.NVarChar, id || name.toLowerCase().replace(/\s+/g, '_'))
+      .input('name', sql.NVarChar, name)
+      .input('color', sql.NVarChar, color || '#6366f1')
+      .input('icon', sql.NVarChar, icon || '📦')
+      .input('created', sql.BigInt, now)
+      .query('INSERT INTO applications (id, name, color, icon, created) VALUES (@id, @name, @color, @icon, @created)');
+    res.json({ success: true, message: 'Application added' });
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete application
+app.delete('/api/applications/:id', async (req, res) => {
+  try {
+    await pool.request()
+      .input('id', sql.NVarChar, req.params.id)
+      .query('DELETE FROM applications WHERE id = @id');
+    res.json({ success: true, message: 'Application deleted' });
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ==================== ACTIVITY LOG ENDPOINTS ====================
 
 // Get activity log for task
