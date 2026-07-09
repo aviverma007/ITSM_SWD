@@ -242,7 +242,7 @@ function ListView({tasks, onSelect}) {
 
 
 
-function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications}) {
+function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, statuses}) {
   if(!task) return null;
   
   let selectedTask = null;
@@ -310,7 +310,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications}) {
           <div>
             <label style={{fontSize:11, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:8, display:"block"}}>Status</label>
             <select value={selectedTask.status} onChange={e=>onUpdate(selectedTask.id, "status", e.target.value)} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
-              {STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+              {(statuses && statuses.length > 0 ? statuses : ["To Do", "In Progress", "Done"]).map(s=><option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
@@ -1064,7 +1064,7 @@ export default function ITSM() {
       </div>
 
       {/* Drawer */}
-      {selected && <TaskDrawer task={selected} tasks={tasks} onClose={(detail)=>{if(detail && detail.type==="task") setSelected(detail); else setSelected(null);}} onUpdate={(id,k,v)=>updateTask(id, k, v)} assignees={assignees} applications={applications}/>}
+      {selected && <TaskDrawer task={selected} tasks={tasks} onClose={(detail)=>{if(detail && detail.type==="task") setSelected(detail); else setSelected(null);}} onUpdate={(id,k,v)=>updateTask(id, k, v)} assignees={assignees} applications={applications} statuses={statuses}/>}
 
       {/* Modal */}
       {showNew && <NewTaskModal onClose={()=>setShowNew(false)} onCreate={addTask} assignees={assignees} applications={applications} statuses={statuses}/>}
