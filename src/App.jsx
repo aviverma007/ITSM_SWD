@@ -98,13 +98,16 @@ function Dashboard({tasks, applications, onSelect}) {
 function Kanban({tasks, onSelect, onUpdate, statuses, applications}) {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [appFilter, setAppFilter] = useState("all");
   const [search, setSearch] = useState("");
   
   const assignees = [...new Set(tasks.map(t => t.assignee))].sort();
+  const apps = [...new Set(tasks.map(t => t.app))].sort();
   
   let filtered = tasks;
   if(priorityFilter !== "all") filtered = filtered.filter(t => t.priority === priorityFilter);
   if(assigneeFilter !== "all") filtered = filtered.filter(t => t.assignee === assigneeFilter);
+  if(appFilter !== "all") filtered = filtered.filter(t => t.app === appFilter);
   if(search.trim()) filtered = filtered.filter(t => t.title.toLowerCase().includes(search.toLowerCase()) || t.id.toLowerCase().includes(search.toLowerCase()));
   
   return (
@@ -119,6 +122,12 @@ function Kanban({tasks, onSelect, onUpdate, statuses, applications}) {
           <option value="High">High</option>
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
+        </select>
+
+        <label style={{fontSize:13, color:T.dim, fontWeight:600}}>Application:</label>
+        <select value={appFilter} onChange={e=>setAppFilter(e.target.value)} style={{background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:7, padding:"8px 12px", fontSize:12, fontWeight:500, cursor:"pointer", minWidth:140}}>
+          <option value="all">All</option>
+          {apps.map(a=><option key={a} value={a}>{appOf(a, applications)?.name || a}</option>)}
         </select>
         
         <label style={{fontSize:13, color:T.dim, fontWeight:600}}>Assignee:</label>
@@ -166,17 +175,22 @@ function Kanban({tasks, onSelect, onUpdate, statuses, applications}) {
   );
 }
 
-function ListView({tasks, onSelect}) {
+function ListView({tasks, onSelect, applications, statuses}) {
   const [sort, setSort] = useState("updated");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [appFilter, setAppFilter] = useState("all");
   const [search, setSearch] = useState("");
   
   const assignees = [...new Set(tasks.map(t => t.assignee))].sort();
+  const apps = [...new Set(tasks.map(t => t.app))].sort();
   
   let filtered = tasks;
   if(priorityFilter !== "all") filtered = filtered.filter(t => t.priority === priorityFilter);
   if(assigneeFilter !== "all") filtered = filtered.filter(t => t.assignee === assigneeFilter);
+  if(statusFilter !== "all") filtered = filtered.filter(t => t.status === statusFilter);
+  if(appFilter !== "all") filtered = filtered.filter(t => t.app === appFilter);
   if(search.trim()) filtered = filtered.filter(t => t.title.toLowerCase().includes(search.toLowerCase()) || t.id.toLowerCase().includes(search.toLowerCase()));
   
   const sorted = [...filtered].sort((a,b)=>
@@ -206,6 +220,18 @@ function ListView({tasks, onSelect}) {
           <option value="Low">Low</option>
         </select>
         
+        <label style={{fontSize:13, color:T.dim, fontWeight:600}}>Status:</label>
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:7, padding:"8px 12px", fontSize:12, fontWeight:500, cursor:"pointer", minWidth:140}}>
+          <option value="all">All</option>
+          {(statuses && statuses.length > 0 ? statuses : ["To Do", "In Progress", "Done"]).map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+        
+        <label style={{fontSize:13, color:T.dim, fontWeight:600}}>Application:</label>
+        <select value={appFilter} onChange={e=>setAppFilter(e.target.value)} style={{background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:7, padding:"8px 12px", fontSize:12, fontWeight:500, cursor:"pointer", minWidth:140}}>
+          <option value="all">All</option>
+          {apps.map(a=><option key={a} value={a}>{appOf(a, applications)?.name || a}</option>)}
+        </select>
+        
         <label style={{fontSize:13, color:T.dim, fontWeight:600}}>Assignee:</label>
         <select value={assigneeFilter} onChange={e=>setAssigneeFilter(e.target.value)} style={{background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:7, padding:"8px 12px", fontSize:12, fontWeight:500, cursor:"pointer", minWidth:140}}>
           <option value="all">All</option>
@@ -220,7 +246,7 @@ function ListView({tasks, onSelect}) {
           </div>
         ) : (
           sorted.map(t=>{
-            const app = appOf(t.app);
+            const app = appOf(t.app, applications);
             return (
               <div key={t.id} onClick={()=>onSelect({type:"task", task:t})} style={{background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:16, cursor:"pointer", display:"grid", gridTemplateColumns:"50px 1fr 140px 140px 120px", gap:16, alignItems:"center", transition:"all 0.2s", minHeight:70}} onMouseEnter={e=>{e.currentTarget.style.background=T.panel; e.currentTarget.style.borderColor=T.indigo;}} onMouseLeave={e=>{e.currentTarget.style.background=T.card; e.currentTarget.style.borderColor=T.border;}}>
                 <div style={{width:50, height:50, background:app.bg, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:700}}>{TYPE_ICON[t.type]}</div>
@@ -1091,7 +1117,7 @@ export default function ITSM() {
           <>
             {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected}/>}
             {view==="kanban" && <Kanban tasks={visibleTasks} onSelect={setSelected} onUpdate={updateTask} statuses={statuses} applications={applications}/>}
-            {view==="list" && <ListView tasks={visibleTasks} onSelect={setSelected}/>}
+            {view==="list" && <ListView tasks={visibleTasks} onSelect={setSelected} applications={applications} statuses={statuses}/>}
           </>
         )}
       </div>
