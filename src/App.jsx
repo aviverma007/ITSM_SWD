@@ -451,7 +451,8 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
 }
 
 function NewTaskModal({onClose, onCreate, assignees, applications, statuses}) {
-  const [form, setForm] = useState({ app:"sap", title:"", description:"", priority:"Medium", type:"Task", assignee:assignees && assignees.length > 0 ? assignees[0] : "Unassigned", status:"To Do" });
+  const defaultStatus = (statuses && statuses.length > 0) ? statuses[0] : "To Do";
+  const [form, setForm] = useState({ app:"sap", title:"", description:"", priority:"Medium", type:"Task", assignee:assignees && assignees.length > 0 ? assignees[0] : "Unassigned", status: defaultStatus });
 
   function handleCreate() {
     if(!form.title.trim()) return;
