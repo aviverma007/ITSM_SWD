@@ -220,6 +220,34 @@ export const apiService = {
     }
   },
 
+  // ========== USERS ==========
+
+  async getAllUsers() {
+    try {
+      const res = await fetch(`${API_URL}/users`);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return await res.json();
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      return [];
+    }
+  },
+
+  async addUser(user) {
+    try {
+      const res = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+      });
+      if (!res.ok) throw new Error('Failed to add user');
+      return await res.json();
+    } catch (err) {
+      console.error('Error adding user:', err);
+      return null;
+    }
+  },
+
   // ========== HEALTH CHECK ==========
 
   async checkHealth() {

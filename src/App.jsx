@@ -946,17 +946,25 @@ export default function ITSM() {
     localStorage.setItem("lastUser", currentUser);
   }, [currentUser]);
 
-  // Load tasks and assignees from backend on mount
+  // Load tasks, assignees, and applications from backend on mount
   useEffect(() => {
     const loadData = async () => {
+      // Load tasks
       const data = await apiService.getAllTasks();
       if (data && data.length > 0) {
         setTasks(data);
       }
       
+      // Load assignees
       const assigneesData = await apiService.getAllAssignees();
       if (assigneesData && assigneesData.length > 0) {
         setAssignees(assigneesData.map(a => a.name));
+      }
+
+      // Load applications
+      const applicationsData = await apiService.getAllApplications();
+      if (applicationsData && applicationsData.length > 0) {
+        setApplications(applicationsData);
       }
     };
     loadData();
