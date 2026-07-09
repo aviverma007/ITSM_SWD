@@ -438,7 +438,7 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
   );
 }
 
-function NewTaskModal({onClose, onCreate, assignees, applications}) {
+function NewTaskModal({onClose, onCreate, assignees, applications, statuses}) {
   const [form, setForm] = useState({ app:"sap", title:"", description:"", priority:"Medium", type:"Task", assignee:assignees && assignees.length > 0 ? assignees[0] : "Unassigned", status:"To Do" });
 
   function handleCreate() {
@@ -474,6 +474,13 @@ function NewTaskModal({onClose, onCreate, assignees, applications}) {
             <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:6, display:"block"}}>Priority</label>
             <select value={form.priority} onChange={e=>setForm({...form, priority:e.target.value})} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
               {PRIORITIES.map(p=><option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:6, display:"block"}}>Status</label>
+            <select value={form.status} onChange={e=>setForm({...form, status:e.target.value})} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
+              {(statuses && statuses.length > 0 ? statuses : ["To Do", "In Progress", "Done"]).map(s=><option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
@@ -926,6 +933,7 @@ export default function ITSM() {
   const [tasks, setTasks] = useState([]);
   const [assignees, setAssignees] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showNew, setShowNew] = useState(false);
   const [appFilter, setAppFilter] = useState(() => localStorage.getItem("lastAppFilter") || "all");
@@ -947,7 +955,7 @@ export default function ITSM() {
     localStorage.setItem("lastUser", currentUser);
   }, [currentUser]);
 
-  // Load tasks, assignees, and applications from backend on mount
+  // Load tasks, assignees, applications, and statuses from backend on mount
   useEffect(() => {
     const loadData = async () => {
       // Load tasks
@@ -966,6 +974,12 @@ export default function ITSM() {
       const applicationsData = await apiService.getAllApplications();
       if (applicationsData && applicationsData.length > 0) {
         setApplications(applicationsData);
+      }
+
+      // Load statuses
+      const statusesData = await apiService.getAllStatusOptions();
+      if (statusesData && statusesData.length > 0) {
+        setStatuses(statusesData.map(s => s.name));
       }
     };
     loadData();
@@ -1096,7 +1110,7 @@ export default function ITSM() {
       {selected && <TaskDrawer task={selected} tasks={tasks} onClose={(detail)=>{if(detail && detail.type==="task") setSelected(detail); else setSelected(null);}} onUpdate={(id,k,v)=>updateTask(id, k, v)} assignees={assignees}/>}
 
       {/* Modal */}
-      {showNew && <NewTaskModal onClose={()=>setShowNew(false)} onCreate={addTask} assignees={assignees} applications={applications}/>}
+      {showNew && <NewTaskModal onClose={()=>setShowNew(false)} onCreate={addTask} assignees={assignees} applications={applications} statuses={statuses}/>}
 
       <style>{`
         @keyframes slideIn {
