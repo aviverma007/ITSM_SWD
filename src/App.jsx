@@ -543,6 +543,14 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
     } else {
       setStatuses([]);
     }
+
+    // Load applications from backend
+    const applicationsData = await apiService.getAllApplications();
+    if (applicationsData && applicationsData.length > 0) {
+      setApplications(applicationsData);
+    } else {
+      setApplications([]);
+    }
     
     setHasChanges(false);
   }
