@@ -14,14 +14,9 @@ const VIEWS = [
   { id:"ai",        label:"AI Chat",   icon:"✨" },
 ];
 
-const APPS = [
-  { id:"sap",      name:"SAP S/4HANA",   color:"#6366f1", bg:"#6366f122", icon:"⚙️" },
-  { id:"zoho",     name:"Zoho CRM",      color:"#10b981", bg:"#10b98122", icon:"📞" },
-  { id:"ms365",    name:"Microsoft 365", color:"#06b6d4", bg:"#06b6d422", icon:"☁️" },
-  { id:"security", name:"Cybersecurity", color:"#ef4444", bg:"#ef444422", icon:"🔒" },
-  { id:"infra",    name:"Infrastructure",color:"#f59e0b", bg:"#f59e0b22", icon:"🏗️" },
-  { id:"portal",   name:"Property Portal",color:"#a855f7", bg:"#a855f722", icon:"🏠" },
-];
+// ====== APPLICATIONS - LOAD FROM DATABASE VIA API ======
+// Removed hardcoded APPS - now loaded from backend in useEffect
+const APPS = []; // Will be populated from database
 
 const T = {
   bg:"#0f172a", text:"#e2e8f0", dim:"#94a3b8", panel:"#1e293b", card:"#1a2332", border:"#334155", faint:"#64748b",
