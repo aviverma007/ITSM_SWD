@@ -11,7 +11,6 @@ const VIEWS = [
   { id:"dashboard", label:"Dashboard", icon:"📊" },
   { id:"kanban",    label:"Kanban",    icon:"📋" },
   { id:"list",      label:"List View", icon:"≡" },
-  { id:"ai",        label:"AI Chat",   icon:"✨" },
 ];
 
 // ====== APPLICATIONS - LOAD FROM DATABASE VIA API ======
@@ -242,47 +241,6 @@ function ListView({tasks, onSelect}) {
 }
 
 
-function AIChat({tasks, applications}) {
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([{ role:"assistant", text:"Welcome! Ask me about your tasks. Try: 'show critical', 'summary', 'high priority', or ask anything!" }]);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  function handleSend() {
-    if(!input.trim()) return;
-    setMessages(m=>[...m, { role:"user", text:input }]);
-    const q = input.toLowerCase();
-    const critical = tasks.filter(t=>t.priority==="Critical"&&t.status!=="Done");
-    const high = tasks.filter(t=>t.priority==="High"&&t.status!=="Done");
-    const response = q.includes("critical")?`🚨 Found ${critical.length} critical issues:\n${critical.map(t=>`• ${t.title} (${t.assignee})`).join("\n")}`:q.includes("summary")?`📊 Summary:\n• Total: ${tasks.length}\n• Done: ${tasks.filter(t=>t.status==="Done").length}\n• In Progress: ${tasks.filter(t=>t.status==="In Progress").length}\n• To Do: ${tasks.filter(t=>t.status==="To Do").length}`:q.includes("high")?`⚠️ Found ${high.length} high priority tasks:\n${high.map(t=>`• ${t.title}`).join("\n")}`:q.includes("app")?`📱 Applications:\n${(applications || []).map(a=>`• ${a.name}: ${tasks.filter(t=>t.app===a.id).length} tasks`).join("\n")}`:"I'm your AI assistant. Ask me about tasks, priorities, summaries, or specific applications!";
-    setMessages(m=>[...m, { role:"assistant", text:response }]);
-    setInput("");
-  }
-
-  return (
-    <div style={{maxWidth:900, margin:"0 auto", display:"flex", flexDirection:"column", height:"calc(100vh - 200px)", width:"100%"}}>
-      <div style={{flex:1, overflowY:"auto", marginBottom:16, display:"flex", flexDirection:"column", gap:12, paddingRight:8}}>
-        {messages.map((m,i)=>(
-          <div key={i} style={{display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-            <div style={{background:m.role==="user"?T.indigo:T.card, color:T.text, padding:"12px 16px", borderRadius:12, maxWidth:"75%", fontSize:14, wordBreak:"break-word", lineHeight:1.5, border:m.role==="assistant"?`1px solid ${T.border}`:"none", whiteSpace:"pre-wrap"}}>{m.text}</div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div style={{display:"flex", gap:10, alignItems:"flex-end", flexShrink:0}}>
-        <input type="text" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(), handleSend())} placeholder="Ask about tasks (Enter to send, Shift+Enter for new line)..." style={{flex:1, background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13, fontWeight:500, outline:"none", minHeight:40}}/>
-        <Btn onClick={handleSend}>Send</Btn>
-      </div>
-    </div>
-  );
-}
 
 function TaskDrawer({task, tasks, onClose, onUpdate, assignees}) {
   if(!task) return null;
@@ -1101,7 +1059,6 @@ export default function ITSM() {
             {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected}/>}
             {view==="kanban" && <Kanban tasks={visibleTasks} onSelect={setSelected} onUpdate={updateTask}/>}
             {view==="list" && <ListView tasks={visibleTasks} onSelect={setSelected}/>}
-            {view==="ai" && <AIChat tasks={tasks} applications={applications}/>}
           </>
         )}
       </div>
