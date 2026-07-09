@@ -92,7 +92,7 @@ function Dashboard({tasks, applications, onSelect}) {
   );
 }
 
-function Kanban({tasks, onSelect, onUpdate}) {
+function Kanban({tasks, onSelect, onUpdate, statuses, applications}) {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -126,7 +126,7 @@ function Kanban({tasks, onSelect, onUpdate}) {
       </div>
       
       <div style={{display:"flex", gap:18, width:"100%", overflowX:"auto", overflowY:"hidden", paddingBottom:8, flex:1}}>
-        {COLS.map(col=>{
+        {(statuses && statuses.length > 0 ? statuses : COLS).map(col=>{
           const col_tasks = filtered.filter(t=>t.status===col);
           return (
             <div key={col} style={{flex:"1 1 340px", minWidth:340, display:"flex", flexDirection:"column", flexShrink:0}}>
@@ -136,7 +136,7 @@ function Kanban({tasks, onSelect, onUpdate}) {
               </div>
               <div style={{display:"flex", flexDirection:"column", gap:14, overflowY:"auto", maxHeight:"calc(100vh - 250px)", paddingRight:8}}>
                 {col_tasks.map(t=>{
-                  const app = appOf(t.app);
+                  const app = appOf(t.app, applications);
                   return (
                     <div key={t.id} onClick={()=>onSelect({type:"task", task:t})} style={{background:T.card, border:`2px solid ${app.color}30`, borderRadius:10, padding:14, cursor:"pointer", transition:"all 0.2s", minHeight:110}} onMouseEnter={e=>{e.currentTarget.style.borderColor=app.color; e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow=`0 4px 12px ${app.color}20`;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=app.color+"30"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="none";}}>
                       <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:10, gap:8}}>
@@ -1084,7 +1084,7 @@ export default function ITSM() {
         {currentUser==="user" && (
           <>
             {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected}/>}
-            {view==="kanban" && <Kanban tasks={visibleTasks} onSelect={setSelected} onUpdate={updateTask}/>}
+            {view==="kanban" && <Kanban tasks={visibleTasks} onSelect={setSelected} onUpdate={updateTask} statuses={statuses} applications={applications}/>}
             {view==="list" && <ListView tasks={visibleTasks} onSelect={setSelected}/>}
           </>
         )}
