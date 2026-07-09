@@ -300,10 +300,11 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
     }
   };
 
+  const sortedTasks = [...filteredTasks].sort((a,b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
+
   // If showing detail view for a single task
   if(showDetail && formData) {
     const selectedTask = formData;
-    const sortedTasks = [...filteredTasks].sort((a,b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
     const app = selectedTask ? appOf(selectedTask.app, applications) : null;
     return (
       <div style={{position:"fixed", right:0, top:0, height:"100vh", width:"min(45%,600px)", background:T.panel, borderLeft:`3px solid ${app.color}`, display:"flex", flexDirection:"column", zIndex:1000, boxShadow:"-4px 0 40px rgba(0,0,0,0.4)", animation:"slideIn 0.3s ease"}}>
