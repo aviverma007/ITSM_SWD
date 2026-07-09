@@ -47,7 +47,7 @@ function Btn({onClick, children, sm, disabled, style}) {
   return <button onClick={onClick} disabled={disabled} style={{...style, background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:sm?"6px 12px":"10px 16px", fontSize:sm?11:12, fontWeight:700, cursor:disabled?"not-allowed":"pointer", opacity:disabled?0.5:1, transition:"all 0.2s"}} onMouseEnter={e=>!disabled&&(e.currentTarget.style.background=T.violet)} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>{children}</button>;
 }
 
-function Dashboard({tasks, onSelect}) {
+function Dashboard({tasks, applications, onSelect}) {
   const done = tasks.filter(t=>t.status==="Done").length;
   const inProgress = tasks.filter(t=>t.status==="In Progress").length;
   const blocked = tasks.filter(t=>t.priority==="Critical"&&t.status!=="Done").length;
@@ -57,7 +57,7 @@ function Dashboard({tasks, onSelect}) {
     { label:"Completed", value:done, color:T.emerald, filter:"done" },
     { label:"Critical (Unblock)", value:blocked, color:T.rose, filter:"critical" },
   ];
-  const appBreakdown = useMemo(()=>APPS.map(a=>({ app:a, count:tasks.filter(t=>t.app===a.id).length, done:tasks.filter(t=>t.app===a.id&&t.status==="Done").length })).sort((x,y)=>y.count-x.count),[tasks]);
+  const appBreakdown = useMemo(()=>(applications || []).map(a=>({ app:a, count:tasks.filter(t=>t.app===a.id).length, done:tasks.filter(t=>t.app===a.id&&t.status==="Done").length })).sort((x,y)=>y.count-x.count),[tasks, applications]);
 
   return (
     <div style={{width:"100%", display:"flex", flexDirection:"column", gap:12}}>
@@ -242,7 +242,7 @@ function ListView({tasks, onSelect}) {
 }
 
 
-function AIChat({tasks}) {
+function AIChat({tasks, applications}) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([{ role:"assistant", text:"Welcome! Ask me about your tasks. Try: 'show critical', 'summary', 'high priority', or ask anything!" }]);
   const messagesEndRef = useRef(null);
@@ -261,7 +261,7 @@ function AIChat({tasks}) {
     const q = input.toLowerCase();
     const critical = tasks.filter(t=>t.priority==="Critical"&&t.status!=="Done");
     const high = tasks.filter(t=>t.priority==="High"&&t.status!=="Done");
-    const response = q.includes("critical")?`🚨 Found ${critical.length} critical issues:\n${critical.map(t=>`• ${t.title} (${t.assignee})`).join("\n")}`:q.includes("summary")?`📊 Summary:\n• Total: ${tasks.length}\n• Done: ${tasks.filter(t=>t.status==="Done").length}\n• In Progress: ${tasks.filter(t=>t.status==="In Progress").length}\n• To Do: ${tasks.filter(t=>t.status==="To Do").length}`:q.includes("high")?`⚠️ Found ${high.length} high priority tasks:\n${high.map(t=>`• ${t.title}`).join("\n")}`:q.includes("app")?`📱 Applications:\n${APPS.map(a=>`• ${a.name}: ${tasks.filter(t=>t.app===a.id).length} tasks`).join("\n")}`:"I'm your AI assistant. Ask me about tasks, priorities, summaries, or specific applications!";
+    const response = q.includes("critical")?`🚨 Found ${critical.length} critical issues:\n${critical.map(t=>`• ${t.title} (${t.assignee})`).join("\n")}`:q.includes("summary")?`📊 Summary:\n• Total: ${tasks.length}\n• Done: ${tasks.filter(t=>t.status==="Done").length}\n• In Progress: ${tasks.filter(t=>t.status==="In Progress").length}\n• To Do: ${tasks.filter(t=>t.status==="To Do").length}`:q.includes("high")?`⚠️ Found ${high.length} high priority tasks:\n${high.map(t=>`• ${t.title}`).join("\n")}`:q.includes("app")?`📱 Applications:\n${(applications || []).map(a=>`• ${a.name}: ${tasks.filter(t=>t.app===a.id).length} tasks`).join("\n")}`:"I'm your AI assistant. Ask me about tasks, priorities, summaries, or specific applications!";
     setMessages(m=>[...m, { role:"assistant", text:response }]);
     setInput("");
   }
@@ -456,7 +456,7 @@ function NewTaskModal({onClose, onCreate, assignees}) {
           <div>
             <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:6, display:"block"}}>Application</label>
             <select value={form.app} onChange={e=>setForm({...form, app:e.target.value})} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
-              {APPS.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+              {applications && applications.length > 0 ? applications.map(a=><option key={a.id} value={a.id}>{a.name}</option>) : <option value="">No applications</option>}
             </select>
           </div>
 
@@ -829,7 +829,7 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                   <label style={{fontSize:11, fontWeight:700, color:T.dim, marginBottom:4, display:"block"}}>Application</label>
                   <select value={ticketAppFilter} onChange={e=>setTicketAppFilter(e.target.value)} style={{width:"100%", background:T.bg, color:T.text, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", fontSize:12}}>
                     <option value="all">All Apps</option>
-                    {APPS.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+                    {applications && applications.length > 0 ? applications.map(a=><option key={a.id} value={a.id}>{a.name}</option>) : null}
                   </select>
                 </div>
               </div>
@@ -1083,10 +1083,10 @@ export default function ITSM() {
         {currentUser==="admin" && <AdminPanel tasks={tasks} onDeleteTask={(id)=>{}} onRestoreTask={(id)=>{}}/>}
         {currentUser==="user" && (
           <>
-            {view==="dashboard" && <Dashboard tasks={visibleTasks} onSelect={setSelected}/>}
+            {view==="dashboard" && <Dashboard tasks={visibleTasks} applications={applications} onSelect={setSelected}/>}
             {view==="kanban" && <Kanban tasks={visibleTasks} onSelect={setSelected} onUpdate={updateTask}/>}
             {view==="list" && <ListView tasks={visibleTasks} onSelect={setSelected}/>}
-            {view==="ai" && <AIChat tasks={tasks}/>}
+            {view==="ai" && <AIChat tasks={tasks} applications={applications}/>}
           </>
         )}
       </div>
