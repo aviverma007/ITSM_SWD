@@ -63,6 +63,41 @@ async function ensureTables() {
   `);
 
   await pool.request().query(`
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='tickets_enhanced' AND xtype='U')
+    CREATE TABLE tickets_enhanced (
+      id NVARCHAR(50) PRIMARY KEY,
+      ticket_number INT IDENTITY(1,1),
+      app NVARCHAR(100) NOT NULL,
+      title NVARCHAR(500) NOT NULL,
+      description NVARCHAR(MAX),
+      status NVARCHAR(50) NOT NULL,
+      priority NVARCHAR(50) NOT NULL,
+      type NVARCHAR(50) NOT NULL,
+      assignee NVARCHAR(100),
+      sprint NVARCHAR(100),
+      story INT,
+      story_points INT,
+      due_date BIGINT,
+      labels NVARCHAR(MAX),
+      tags NVARCHAR(MAX),
+      reporter NVARCHAR(100),
+      watchers NVARCHAR(MAX),
+      environment NVARCHAR(200),
+      impact NVARCHAR(100),
+      effort_estimate INT,
+      time_spent_minutes INT,
+      attachments NVARCHAR(MAX),
+      related_tickets NVARCHAR(MAX),
+      created BIGINT NOT NULL,
+      updated BIGINT NOT NULL,
+      created_by NVARCHAR(100),
+      last_modified_by NVARCHAR(100),
+      is_deleted BIT DEFAULT 0,
+      deleted_at BIGINT
+    )
+  `);
+
+  await pool.request().query(`
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='assignees' AND xtype='U')
     CREATE TABLE assignees (
       id INT IDENTITY(1,1) PRIMARY KEY,
