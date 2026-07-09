@@ -295,15 +295,18 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
         setTitle("All Tasks");
         setColor(T.sky);
       } else if(task.filter === "inprogress") {
-        setFilteredTasks(tasks.filter(t => t.status === "In Progress"));
+        // Include In Progress, WIP, and OPEN statuses
+        setFilteredTasks(tasks.filter(t => t.status === "In Progress" || t.status === "WIP" || t.status === "OPEN"));
         setTitle("In Progress Tasks");
         setColor(T.indigo);
       } else if(task.filter === "done") {
-        setFilteredTasks(tasks.filter(t => t.status === "Done"));
+        // Include Done and CLOSED statuses
+        setFilteredTasks(tasks.filter(t => t.status === "Done" || t.status === "CLOSED"));
         setTitle("Completed Tasks");
         setColor(T.emerald);
       } else if(task.filter === "critical") {
-        setFilteredTasks(tasks.filter(t => t.priority === "Critical" && t.status !== "Done"));
+        // Critical priority that are not done/closed
+        setFilteredTasks(tasks.filter(t => t.priority === "Critical" && t.status !== "Done" && t.status !== "CLOSED"));
         setTitle("Critical Tasks (Unblocked)");
         setColor(T.rose);
       } else if(task.type === "app") {
