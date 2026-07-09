@@ -17,25 +17,45 @@ const VIEWS = [
 // Removed hardcoded APPS - now loaded from backend in useEffect
 const APPS = []; // Will be populated from database
 
-const getTheme = (isDark) => {
-  if (isDark) {
-    return {
-      bg:"#0f172a", text:"#e2e8f0", dim:"#94a3b8", panel:"#1e293b", card:"#1a2332", border:"#334155", faint:"#64748b",
-      indigo:"#6366f1", violet:"#a855f7", sky:"#0ea5e9", emerald:"#10b981", rose:"#f43f5e"
-    };
-  } else {
-    // Light mode: white background, black text
-    return {
-      bg:"#ffffff", text:"#000000", dim:"#666666", panel:"#f5f5f5", card:"#ffffff", border:"#e0e0e0", faint:"#999999",
-      indigo:"#4f46e5", violet:"#7c3aed", sky:"#0284c7", emerald:"#059669", rose:"#dc2626"
-    };
-  }
+const T = {
+  // Background & base colors - modern deep blue/purple gradient
+  bg:"#0a0e27", 
+  text:"#ffffff", 
+  dim:"#a0aec0", 
+  panel:"rgba(30, 41, 59, 0.6)", 
+  card:"rgba(15, 23, 42, 0.5)",
+  border:"rgba(71, 85, 105, 0.4)",
+  faint:"#64748b",
+  
+  // Primary colors with better vibrancy
+  indigo:"#6366f1", 
+  violet:"#a855f7", 
+  sky:"#0ea5e9", 
+  emerald:"#10b981", 
+  rose:"#f43f5e",
+  
+  // New colors for enhanced feel
+  cyan:"#06b6d4",
+  amber:"#f59e0b",
+  pink:"#ec4899"
 };
 
-const T = getTheme(false); // Default dark mode
+const PRI_COLOR = { 
+  Critical:"#ff4757", 
+  High:"#ffa502", 
+  Medium:"#2ed573", 
+  Low:"#5f27cd" 
+};
 
-const PRI_COLOR = { Critical:"#f43f5e", High:"#f59e0b", Medium:"#3b82f6", Low:"#8b5cf6" };
-const STATUS_COLOR = { "To Do":"#94a3b8", "In Progress":"#3b82f6", "In Review":"#f59e0b", "Done":"#10b981" };
+const STATUS_COLOR = { 
+  "To Do":"#95a3b3", 
+  "In Progress":"#0ea5e9", 
+  "In Review":"#f59e0b", 
+  "Done":"#10b981",
+  "OPEN":"#3b82f6",
+  "CLOSED":"#10b981",
+  "WIP":"#06b6d4"
+};
 const TYPE_ICON = { Bug:"🐛", Task:"✓", Story:"📖", Incident:"⚠️", Change:"🔄", Problem:"❌" };
 
 // ====== EMPTY SEED DATA (Load from backend) ======
@@ -81,30 +101,37 @@ function Dashboard({tasks, applications, onSelect, statuses}) {
   const appBreakdown = useMemo(()=>(applications || []).map(a=>({ app:a, count:tasks.filter(t=>t.app===a.id).length, done:tasks.filter(t=>t.app===a.id&&(t.status==="Done"||t.status==="CLOSED")).length })).sort((x,y)=>y.count-x.count),[tasks, applications]);
 
   return (
-    <div style={{width:"100%", display:"flex", flexDirection:"column", gap:12}}>
-      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, width:"100%", flexShrink:0}}>
+    <div style={{width:"100%", display:"flex", flexDirection:"column", gap:20}}>
+      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, width:"100%", flexShrink:0}}>
         {stats.map(s=>(
-          <div key={s.label} style={{background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:12, cursor:"pointer", transition:"all 0.3s", minHeight:95, display:"flex", flexDirection:"column", justifyContent:"space-between"}} onClick={()=>onSelect({type:"filter", filter:s.filter})} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
-            <div style={{fontSize:10, color:T.dim, fontWeight:700, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6}}>{s.label}</div>
-            <div style={{fontSize:28, fontWeight:900, color:s.color}}>{s.value}</div>
+          <div key={s.label} style={{background:`${T.card}`, backdropFilter:"blur(10px)", border:`1.5px solid ${T.border}`, borderRadius:16, padding:24, cursor:"pointer", transition:"all 0.4s cubic-bezier(0.4, 0, 0.2, 1)", minHeight:140, display:"flex", flexDirection:"column", justifyContent:"space-between", boxShadow:"0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)", position:"relative", overflow:"hidden"}} onClick={()=>onSelect({type:"filter", filter:s.filter})} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-8px) scale(1.02)"; e.currentTarget.style.boxShadow="0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)"}} onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0) scale(1)"; e.currentTarget.style.boxShadow="0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"}}>
+            {/* Glass effect background */}
+            <div style={{position:"absolute", top:-50, right:-50, width:150, height:150, background:`${s.color}15`, borderRadius:"50%", filter:"blur(40px)"}}/>
+            
+            <div>
+              <div style={{fontSize:11, color:T.dim, fontWeight:700, textTransform:"uppercase", letterSpacing:".12em", marginBottom:12, position:"relative", zIndex:1}}>● {s.label}</div>
+              <div style={{fontSize:48, fontWeight:900, color:s.color, position:"relative", zIndex:1, textShadow:`0 0 20px ${s.color}40`}}>{s.value}</div>
+            </div>
+            
+            <div style={{fontSize:12, color:T.dim, position:"relative", zIndex:1, marginTop:8}}>Click to view</div>
           </div>
         ))}
       </div>
 
-      <div style={{background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:12, width:"100%", minHeight:300}}>
-        <div style={{fontSize:10, fontWeight:700, color:T.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:10}}>Workload Distribution by Application</div>
-        <div style={{display:"flex", flexDirection:"column", gap:8}}>
+      <div style={{background:`${T.card}`, backdropFilter:"blur(10px)", border:`1.5px solid ${T.border}`, borderRadius:16, padding:28, width:"100%", minHeight:320, boxShadow:"0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"}}>
+        <div style={{fontSize:13, fontWeight:800, color:T.text, textTransform:"uppercase", letterSpacing:".12em", marginBottom:24}}>📊 Workload by Application</div>
+        <div style={{display:"flex", flexDirection:"column", gap:16}}>
           {appBreakdown.map(ab=>(
-            <div key={ab.app.id} style={{width:"100%", cursor:"pointer"}} onClick={()=>onSelect({type:"app", app:ab.app.id})}>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4}}>
-                <span style={{display:"flex", alignItems:"center", gap:6, fontSize:11}}>
-                  <span style={{width:7, height:7, borderRadius:"50%", background:ab.app.color, flexShrink:0}}/>
-                  <strong style={{fontSize:11}}>{ab.app.name}</strong>
+            <div key={ab.app.id} style={{width:"100%", cursor:"pointer", transition:"all 0.3s"}} onClick={()=>onSelect({type:"app", app:ab.app.id})} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+                <span style={{display:"flex", alignItems:"center", gap:8, fontSize:13}}>
+                  <span style={{width:10, height:10, borderRadius:"50%", background:ab.app.color, flexShrink:0, boxShadow:`0 0 12px ${ab.app.color}80`}}/>
+                  <strong style={{fontSize:13, fontWeight:700}}>{ab.app.name}</strong>
                 </span>
-                <span style={{fontSize:9, color:T.dim, fontWeight:600}}>{ab.count} ({ab.done})</span>
+                <span style={{fontSize:11, color:T.dim, fontWeight:600}}>{ab.count} tasks ({ab.done} done)</span>
               </div>
-              <div style={{background:T.bg, height:6, borderRadius:3, overflow:"hidden", cursor:"pointer"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>
-                <div style={{background:ab.app.color, height:"100%", width:`${pct(ab.done,ab.count)}%`, transition:"width 0.4s ease"}}/>
+              <div style={{background:`rgba(0,0,0,0.2)`, height:12, borderRadius:8, overflow:"hidden", cursor:"pointer", border:`1px solid ${ab.app.color}30`}}>
+                <div style={{background:`linear-gradient(90deg, ${ab.app.color}, ${ab.app.color}dd)`, height:"100%", width:`${pct(ab.done,ab.count)}%`, transition:"width 0.6s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow:`0 0 20px ${ab.app.color}60`}}/>
               </div>
             </div>
           ))}
@@ -967,11 +994,7 @@ export default function ITSM() {
   const [showNew, setShowNew] = useState(false);
   const [appFilter, setAppFilter] = useState(() => localStorage.getItem("lastAppFilter") || "all");
   const [showProfile, setShowProfile] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem("lastUser") || "user"); // "user" or "admin"
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("isDarkMode") !== "false");
-
-  // Get current theme based on mode
-  const T = getTheme(isDarkMode);
+  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem("lastUser") || "user");
 
   // Save view to localStorage when it changes
   useEffect(() => {
@@ -987,11 +1010,6 @@ export default function ITSM() {
   useEffect(() => {
     localStorage.setItem("lastUser", currentUser);
   }, [currentUser]);
-
-  // Save theme to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem("isDarkMode", isDarkMode);
-  }, [isDarkMode]);
 
   // Load tasks, assignees, applications, and statuses from backend on mount
   useEffect(() => {
@@ -1089,14 +1107,17 @@ export default function ITSM() {
   const criticalCount = tasks.filter(t=>t.priority==="Critical"&&t.status!=="Done").length;
 
   return (
-    <div style={{height:"100vh", width:"100vw", background:T.bg, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:T.text, display:"flex", flexDirection:"column", overflow:"hidden", margin:0, padding:0}}>
+    <div style={{height:"100vh", width:"100vw", background:`linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0d0f2d 100%)`, fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:T.text, display:"flex", flexDirection:"column", overflow:"hidden", margin:0, padding:0, position:"relative"}}>
+      {/* Animated background elements */}
+      <div style={{position:"absolute", top:-100, left:-100, width:300, height:300, background:"radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)", borderRadius:"50%", filter:"blur(60px)", zIndex:0, pointerEvents:"none"}}/>
+      <div style={{position:"absolute", bottom:-50, right:-50, width:400, height:400, background:"radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)", borderRadius:"50%", filter:"blur(80px)", zIndex:0, pointerEvents:"none"}}/>
       {/* Top bar */}
-      <div style={{background:T.panel, borderBottom:`1px solid ${T.border}`, padding:"0 20px", height:52, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, gap:12, flexWrap:"nowrap"}}>
-        <div style={{display:"flex", alignItems:"center", gap:10, minWidth:"auto"}}>
-          <div style={{background:`linear-gradient(135deg,${T.indigo},${T.violet})`, borderRadius:8, width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:14, color:"#fff", flexShrink:0}}>IT</div>
+      <div style={{background:`${T.panel}`, backdropFilter:"blur(12px)", borderBottom:`1.5px solid ${T.border}`, padding:"0 24px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, gap:12, flexWrap:"nowrap", position:"relative", zIndex:100, boxShadow:"0 4px 20px rgba(0,0,0,0.2)"}}>
+        <div style={{display:"flex", alignItems:"center", gap:12, minWidth:"auto"}}>
+          <div style={{background:`linear-gradient(135deg,${T.indigo},${T.violet})`, borderRadius:12, width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:18, color:"#fff", flexShrink:0, boxShadow:`0 0 20px ${T.indigo}60`}}>IT</div>
           <div>
-            <div style={{fontWeight:800, fontSize:13, color:T.text, lineHeight:1.1}}>ITSM Monitor</div>
-            <div style={{fontSize:8, color:T.dim, letterSpacing:".08em"}}>MULTI-APP</div>
+            <div style={{fontWeight:800, fontSize:15, color:T.text, lineHeight:1.1}}>ITSM Monitor</div>
+            <div style={{fontSize:9, color:T.dim, letterSpacing:".12em", fontWeight:600}}>MULTI-APP INTELLIGENCE</div>
           </div>
         </div>
 
@@ -1113,7 +1134,6 @@ export default function ITSM() {
         <div style={{display:"flex", gap:6, alignItems:"center", minWidth:"auto", justifyContent:"flex-end", flexShrink:0}}>
           {criticalCount>0&&<span style={{fontSize:8, background:T.rose+"22", color:T.rose, border:`1px solid ${T.rose}40`, padding:"2px 8px", borderRadius:4, fontWeight:700, whiteSpace:"nowrap"}}>🔥 {criticalCount}</span>}
           <button onClick={exportToExcel} style={{background:T.sky, color:"#fff", border:"none", borderRadius:8, padding:"10px 14px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>📊 Export</button>
-          <button onClick={()=>setIsDarkMode(!isDarkMode)} style={{background:isDarkMode?"#333333":"#ffffff", color:isDarkMode?"#ffffff":"#000000", border:`2px solid ${isDarkMode?"#555555":"#000000"}`, borderRadius:8, padding:"8px 12px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>{isDarkMode?"🌙 Dark":"☀️ Light"}</button>
           <button onClick={()=>setShowProfile(!showProfile)} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>{currentUser==="admin"?"👤 Admin":"👤 User"}</button>
           <button onClick={()=>setShowNew(true)} style={{background:T.indigo, color:"#fff", border:"none", borderRadius:8, padding:"10px 16px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.background=T.violet} onMouseLeave={e=>e.currentTarget.style.background=T.indigo}>+ New</button>
         </div>
