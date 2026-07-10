@@ -1,7 +1,22 @@
 // API_SERVICE.js - Place this in your src folder
 
-// Get API URL from environment variable, fallback to localhost for development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Get API URL from environment variable
+// Fallback: Use current host's IP instead of localhost (better for network access)
+const getDefaultApiUrl = () => {
+  const isDevelopment = import.meta.env.MODE === 'development';
+  
+  if (isDevelopment) {
+    // In development, try to use the host that served the frontend
+    const hostname = window.location.hostname;
+    // If localhost, still try to use it, but if a real IP/domain, use that
+    return `http://${hostname}:5001/api`;
+  } else {
+    // In production, always use current host
+    return `http://${window.location.hostname}:5001/api`;
+  }
+};
+
+const API_URL = import.meta.env.VITE_API_URL || getDefaultApiUrl();
 
 export const apiService = {
   // ========== TICKETS (Enhanced) ==========
