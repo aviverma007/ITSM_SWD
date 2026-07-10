@@ -500,7 +500,18 @@ function TaskDrawer({task, tasks, onClose, onUpdate, assignees, applications, st
 
 function NewTaskModal({onClose, onCreate, assignees, applications, statuses}) {
   const defaultStatus = (statuses && statuses.length > 0) ? statuses[0] : "To Do";
-  const [form, setForm] = useState({ app:"sap", title:"", description:"", priority:"Medium", type:"Task", assignee:assignees && assignees.length > 0 ? assignees[0] : "Unassigned", status: defaultStatus });
+  const defaultApp = (applications && applications.length > 0) ? applications[0].id : "sap";
+  const defaultAssignee = (assignees && assignees.length > 0) ? assignees[0].name || assignees[0] : "Unassigned";
+  
+  const [form, setForm] = useState({ 
+    app: defaultApp, 
+    title:"", 
+    description:"", 
+    priority:"Medium", 
+    type:"Task", 
+    assignee: defaultAssignee, 
+    status: defaultStatus 
+  });
 
   function handleCreate() {
     if(!form.title.trim()) return;
@@ -534,7 +545,7 @@ function NewTaskModal({onClose, onCreate, assignees, applications, statuses}) {
           <div>
             <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:6, display:"block"}}>Priority</label>
             <select value={form.priority} onChange={e=>setForm({...form, priority:e.target.value})} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
-              {PRIORITIES.map(p=><option key={p} value={p}>{p}</option>)}
+              {["Critical", "High", "Medium", "Low"].map(p=><option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
@@ -548,14 +559,18 @@ function NewTaskModal({onClose, onCreate, assignees, applications, statuses}) {
           <div>
             <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:6, display:"block"}}>Type</label>
             <select value={form.type} onChange={e=>setForm({...form, type:e.target.value})} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
-              {Object.keys(TYPE_ICON).map(t=><option key={t} value={t}>{t}</option>)}
+              {["Bug", "Task", "Story", "Incident", "Change", "Problem"].map(t=><option key={t} value={t}>{t}</option>)}
             </select>
           </div>
 
           <div>
             <label style={{fontSize:12, fontWeight:700, color:T.dim, textTransform:"uppercase", marginBottom:6, display:"block"}}>Assignee</label>
             <select value={form.assignee} onChange={e=>setForm({...form, assignee:e.target.value})} style={{width:"100%", background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"12px 14px", fontSize:13}}>
-              {(assignees && assignees.length > 0 ? assignees : ["Unassigned"]).map(a=><option key={a} value={a}>{a}</option>)}
+              <option value="Unassigned">Unassigned</option>
+              {assignees && assignees.length > 0 && assignees.map(a=>{
+                const name = a.name || a;
+                return <option key={name} value={name}>{name}</option>;
+              })}
             </select>
           </div>
 
