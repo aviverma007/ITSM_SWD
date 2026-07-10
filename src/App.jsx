@@ -911,15 +911,15 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
           </div>
 
           {/* Tickets List */}
-          <div style={{background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:16}}>
+          <div style={{background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:16, paddingRight:24}}>
             <h3 style={{fontSize:14, fontWeight:700, marginBottom:12, color:T.text}}>📋 {showDeleted?"Deleted":"Active"} Tickets ({filteredTickets.length})</h3>
             
-            <div style={{display:"flex", flexDirection:"column", gap:10, maxHeight:"500px", overflowY:"auto"}}>
+            <div style={{display:"flex", flexDirection:"column", gap:10, maxHeight:"500px", overflowY:"auto", paddingRight:8}}>
               {filteredTickets.length === 0 ? (
                 <div style={{padding:"20px", textAlign:"center", color:T.dim, fontSize:12}}>No tickets found</div>
               ) : (
                 filteredTickets.map(t=>(
-                  <div key={t.id} style={{background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:12, display:"flex", justifyContent:"space-between", alignItems:"center", gap:10}}>
+                  <div key={t.id} style={{background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:12, display:"flex", justifyContent:"space-between", alignItems:"center", gap:12}}>
                     <div style={{flex:1, minWidth:0}}>
                       <div style={{fontSize:12, fontWeight:700, color:T.text, marginBottom:4}}>{t.title}</div>
                       <div style={{display:"flex", gap:6, alignItems:"center", fontSize:10, color:T.dim, flexWrap:"wrap"}}>
@@ -958,7 +958,7 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                         Delete
                       </button>
                     ) : (
-                      <div style={{display:"flex", gap:8}}>
+                      <div style={{display:"flex", gap:8, flexShrink:0}}>
                         <button 
                           onClick={async () => {
                             if(window.confirm("Restore this ticket?")) {
@@ -967,22 +967,13 @@ function AdminPanel({tasks = [], onDeleteTask, onRestoreTask}) {
                                 const result = await apiService.restoreTicket(t.id);
                                 console.log("Restore result:", result);
                                 
-                                // Remove from local deleted list immediately
-                                setDeletedTickets(deletedTickets.filter(dt => dt.id !== t.id));
-                                console.log("Removed from local deletedTickets");
+                                // Remove from local deleted list
+                                const updated = deletedTickets.filter(dt => dt.id !== t.id);
+                                setDeletedTickets(updated);
+                                console.log("Removed from deletedTickets, remaining:", updated.length);
                                 
-                                // Small delay to ensure DB transaction completes
-                                await new Promise(resolve => setTimeout(resolve, 100));
-                                
-                                // Reload deleted tickets from backend
-                                const deletedData = await apiService.getDeletedTickets();
-                                if (deletedData) {
-                                  setDeletedTickets(deletedData);
-                                  console.log("Reloaded deletedTickets from backend:", deletedData.length);
-                                }
-                                
-                                // Also call parent to reload active tasks
-                                onRestoreTask(t.id);
+                                // Reload parent tasks
+                                await onRestoreTask(t.id);
                                 
                                 alert("✅ Ticket restored successfully!");
                               } catch (err) {
