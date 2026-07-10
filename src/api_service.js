@@ -18,16 +18,25 @@ const getDefaultApiUrl = () => {
 
 const API_URL = import.meta.env.VITE_API_URL || getDefaultApiUrl();
 
+console.log(`[API Service] Initialized with URL: ${API_URL}`);
+
 export const apiService = {
   // ========== TICKETS (Enhanced) ==========
   
   async getAllTasks() {
     try {
+      console.log(`[getAllTasks] Fetching from: ${API_URL}/tickets`);
       const res = await fetch(`${API_URL}/tickets`);
-      if (!res.ok) throw new Error('Failed to fetch tickets');
-      return await res.json();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`[getAllTasks] HTTP ${res.status}: ${errorText}`);
+        throw new Error(`HTTP ${res.status}: Failed to fetch tickets`);
+      }
+      const data = await res.json();
+      console.log(`[getAllTasks] Success! Received ${data.length} tickets`, data);
+      return data;
     } catch (err) {
-      console.error('Error fetching tickets:', err);
+      console.error('[getAllTasks] Error:', err.message, err);
       return [];
     }
   },
