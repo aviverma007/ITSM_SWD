@@ -250,10 +250,9 @@ app.put('/api/tickets/:id/restore', async (req, res) => {
     const ticket = getResult.recordset[0];
     console.log(`[RESTORE] Ticket data:`, ticket.title);
     
-    // Insert back into tickets_enhanced
+    // Insert back into tickets_enhanced (WITHOUT ticket_number - it's IDENTITY)
     const insertResult = await pool.request()
       .input('id', sql.NVarChar, ticket.id)
-      .input('ticket_number', sql.Int, ticket.ticket_number)
       .input('app', sql.NVarChar, ticket.app)
       .input('title', sql.NVarChar, ticket.title)
       .input('description', sql.NVarChar, ticket.description)
@@ -279,8 +278,8 @@ app.put('/api/tickets/:id/restore', async (req, res) => {
       .input('updated', sql.BigInt, ticket.updated)
       .input('created_by', sql.NVarChar, ticket.created_by)
       .input('last_modified_by', sql.NVarChar, ticket.last_modified_by)
-      .query(`INSERT INTO tickets_enhanced (id, ticket_number, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by) 
-              VALUES (@id, @ticket_number, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by)`);
+      .query(`INSERT INTO tickets_enhanced (id, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by) 
+              VALUES (@id, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by)`);
     
     console.log(`[RESTORE] Inserted into tickets_enhanced`);
     
@@ -303,7 +302,7 @@ app.get('/api/tickets/:id', async (req, res) => {
   try {
     const result = await pool.request()
       .input('id', sql.NVarChar, req.params.id)
-      .query('SELECT * FROM tickets_enhanced WHERE id = @id AND is_deleted = 0');
+      .query('SELECT * FROM tickets_enhanced WHERE id = @id');
     const row = result.recordset[0];
     if (!row) {
       res.status(404).json({ error: 'Ticket not found' });
@@ -459,10 +458,9 @@ app.delete('/api/tickets/:id', async (req, res) => {
     
     const ticket = getResult.recordset[0];
     
-    // Insert into deleted_tickets table
+    // Insert into deleted_tickets table (WITHOUT ticket_number - it's IDENTITY in deleted_tickets too)
     await pool.request()
       .input('id', sql.NVarChar, ticket.id)
-      .input('ticket_number', sql.Int, ticket.ticket_number)
       .input('app', sql.NVarChar, ticket.app)
       .input('title', sql.NVarChar, ticket.title)
       .input('description', sql.NVarChar, ticket.description)
@@ -490,8 +488,8 @@ app.delete('/api/tickets/:id', async (req, res) => {
       .input('last_modified_by', sql.NVarChar, ticket.last_modified_by)
       .input('deleted_at', sql.BigInt, now)
       .input('deleted_by', sql.NVarChar, 'admin')
-      .query(`INSERT INTO deleted_tickets (id, ticket_number, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by, deleted_at, deleted_by) 
-              VALUES (@id, @ticket_number, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by, @deleted_at, @deleted_by)`);
+      .query(`INSERT INTO deleted_tickets (id, app, title, description, status, priority, type, assignee, sprint, story, story_points, due_date, labels, tags, reporter, watchers, environment, impact, effort_estimate, time_spent_minutes, attachments, related_tickets, created, updated, created_by, last_modified_by, deleted_at, deleted_by) 
+              VALUES (@id, @app, @title, @description, @status, @priority, @type, @assignee, @sprint, @story, @story_points, @due_date, @labels, @tags, @reporter, @watchers, @environment, @impact, @effort_estimate, @time_spent_minutes, @attachments, @related_tickets, @created, @updated, @created_by, @last_modified_by, @deleted_at, @deleted_by)`);
     
     // Delete from tickets_enhanced
     await pool.request()
