@@ -1074,6 +1074,17 @@ export default function ITSM() {
     localStorage.setItem("lastAppFilter", appFilter);
   }, [appFilter]);
 
+  // Auto-reset appFilter if it's filtering out all tasks (common issue when switching systems)
+  useEffect(() => {
+    if (tasks.length > 0 && appFilter !== "all") {
+      const filteredTasks = tasks.filter(t => t.app === appFilter);
+      if (filteredTasks.length === 0) {
+        console.log(`[Auto-fix] AppFilter was set to "${appFilter}" but no tasks found. Resetting to "all"`);
+        setAppFilter("all");
+      }
+    }
+  }, [tasks, appFilter]);
+
   // Save currentUser to localStorage when it changes
   useEffect(() => {
     localStorage.setItem("lastUser", currentUser);
