@@ -7,9 +7,28 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware
-app.use(cors());
+// Middleware - Enhanced CORS for network access
+app.use(cors({
+  origin: '*', // Allow all origins for network access
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}));
+
 app.use(express.json());
+
+// Diagnostic endpoint to check server health
+app.get('/api/health', (req, res) => {
+  console.log(`[HEALTH] Request from ${req.ip} - ${req.hostname}`);
+  res.json({ 
+    status: 'ok', 
+    message: 'Backend server is running', 
+    database: dbConfig.database, 
+    server: dbConfig.server,
+    timestamp: new Date().toISOString(),
+    requestFrom: req.ip
+  });
+});
 
 // ==================== SQL SERVER CONFIG ====================
 const dbConfig = {
@@ -195,7 +214,9 @@ async function ensureTables() {
 // Get all tickets
 app.get('/api/tickets', async (req, res) => {
   try {
+    console.log(`[GET /api/tickets] Request from ${req.ip}`);
     const result = await pool.request().query('SELECT * FROM tickets_enhanced ORDER BY created DESC');
+    console.log(`[GET /api/tickets] Found ${result.recordset.length} tickets`);
     const tickets = result.recordset.map(row => ({
       ...row,
       labels: row.labels ? JSON.parse(row.labels) : [],
@@ -206,7 +227,7 @@ app.get('/api/tickets', async (req, res) => {
     }));
     res.json(tickets);
   } catch (err) {
-    console.error("ERROR:", err.message);
+    console.error("[GET /api/tickets] ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -727,12 +748,6 @@ app.get('/api/stats', async (req, res) => {
     console.error("ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
-});
-
-// ==================== HEALTH CHECK ====================
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend server is running', database: dbConfig.database, server: dbConfig.server });
 });
 
 // Start server after DB connects
