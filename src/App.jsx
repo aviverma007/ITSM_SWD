@@ -118,17 +118,17 @@ function Dashboard({tasks, applications, onSelect, statuses}) {
         ))}
       </div>
 
-      <div style={{background:`${T.card}`, backdropFilter:"blur(10px)", border:`1.5px solid ${T.border}`, borderRadius:16, padding:28, width:"100%", minHeight:320, boxShadow:"0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"}}>
+      <div style={{background:`${T.card}`, backdropFilter:"blur(10px)", border:`1.5px solid ${T.border}`, borderRadius:16, padding:28, paddingRight:40, width:"100%", minHeight:320, boxShadow:"0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"}}>
         <div style={{fontSize:13, fontWeight:800, color:T.text, textTransform:"uppercase", letterSpacing:".12em", marginBottom:24}}>📊 Workload by Application</div>
-        <div style={{display:"flex", flexDirection:"column", gap:16}}>
+        <div style={{display:"flex", flexDirection:"column", gap:16, paddingRight:12}}>
           {appBreakdown.map(ab=>(
             <div key={ab.app.id} style={{width:"100%", cursor:"pointer", transition:"all 0.3s"}} onClick={()=>onSelect({type:"app", app:ab.app.id})} onMouseEnter={e=>e.currentTarget.style.opacity=0.8} onMouseLeave={e=>e.currentTarget.style.opacity=1}>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-                <span style={{display:"flex", alignItems:"center", gap:8, fontSize:13}}>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8, gap:12}}>
+                <span style={{display:"flex", alignItems:"center", gap:8, fontSize:13, minWidth:0}}>
                   <span style={{width:10, height:10, borderRadius:"50%", background:ab.app.color, flexShrink:0, boxShadow:`0 0 12px ${ab.app.color}80`}}/>
                   <strong style={{fontSize:13, fontWeight:700}}>{ab.app.name}</strong>
                 </span>
-                <span style={{fontSize:11, color:T.dim, fontWeight:600}}>{ab.count} tasks ({ab.done} done)</span>
+                <span style={{fontSize:11, color:T.dim, fontWeight:600, whiteSpace:"nowrap", flexShrink:0}}>{ab.count} tasks ({ab.done} done)</span>
               </div>
               <div style={{background:`rgba(0,0,0,0.2)`, height:12, borderRadius:8, overflow:"hidden", cursor:"pointer", border:`1px solid ${ab.app.color}30`}}>
                 <div style={{background:`linear-gradient(90deg, ${ab.app.color}, ${ab.app.color}dd)`, height:"100%", width:`${pct(ab.done,ab.count)}%`, transition:"width 0.6s cubic-bezier(0.4, 0, 0.2, 1)", boxShadow:`0 0 20px ${ab.app.color}60`}}/>
